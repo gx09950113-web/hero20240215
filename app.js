@@ -1,353 +1,256 @@
-/* ================================
- * 百川群英錄 | app.js
- * ================================ */
+/* =======================================================
+   app.js — TOC 可收合 + 世界產物條目跨區對應
+   - 指定項目：基礎世界觀 / 修仙基本知識 / 世界地理 / 世界產物 可收合
+   - 世界產物子項目 → 對應到各宗門底下同名文件
+   - 基本 ScrollSpy 與資料載入（假設 /data/{key}.json）
+   ======================================================= */
 
-/** -----------------------------
- * 1) 章節 id → 檔名 映射
- * ----------------------------- */
-const SECTION_MAP = {
-  // 基礎世界觀
-  "basic-principles": "basic-principles",
-  "world-history": "world-history",
-  "divine-orb": "divine-orb",
-  "yin-yang": "yin-yang",
+/* 快捷選擇器 */
+const $  = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
 
-  // 修仙基本知識
-  "qi": "qi",
-  "root": "root",
-  "power": "power",
-  "benefits": "benefits",
-  "human-cultivation": "human-cultivation",
-  "beast-cultivation": "beast-cultivation",
-  "demon-cultivation": "demon-cultivation",
+/* 文字轉 slug（拿來推斷 section id 或資料 key） */
+const slugify = (t) =>
+  t.trim()
+   .replace(/\s+/g, "-")
+   .replace(/[^\w\u4e00-\u9fa5-]/g, "")
+   .toLowerCase();
 
-  // 世界地理
-  "climate": "climate",
-  "imperial-customs": "imperial-customs",
-  "tax": "tax",
-  "law": "law",
+/* ===== 可收合的「指定按鈕」清單 =====
+   目標：#toc 中文字為下列者的 <li> 加上收合能力 */
+const COLLAPSIBLE_KEYS = new Set([
+  "基礎世界觀",
+  "修仙基本知識",
+  "世界地理",
+  "世界產物",
+]);
 
-  "qj-history": "qj-history",
-  "qj-culture": "qj-culture",
-  "qj-structure": "qj-structure",
-  "zhilingtu": "zhilingtu",
-
-  "xl-history": "xl-history",
-  "yang-vs-yin": "yang-vs-yin",
-  "xl-structure": "xl-structure",
-  "zhuocaoping": "zhuocaoping",
-
-  "yt-history": "yt-history",
-  "yt-culture": "yt-culture",
-  "yt-structure": "yt-structure",
-  "fuhailu": "fuhailu",
-
-  "yl-history": "yl-history",
-  "yl-culture": "yl-culture",
-  "yl-structure": "yl-structure",
-  "baiqishu": "baiqishu",
-
-  "yuqing": "yuqing",
-
-  // 世界產物
-  "prod-zhilingtu": "prod-zhilingtu",
-  "prod-zhuocaoping": "prod-zhuocaoping",
-  "prod-fuhailu": "prod-fuhailu",
-  "prod-baiqishu": "prod-baiqishu",
-  "prod-menu": "prod-menu",
-  "prod-wanxiezong": "prod-wanxiezong",
-  "prod-fanshanxi": "prod-fanshanxi",
-  "prod-jinyuyan": "prod-jinyuyan",
-  "prod-lingcaojing": "prod-lingcaojing",
+/* ===== 世界產物 → 各宗門同名文件 的對應關係 =====
+   規則：當使用者在 TOC 下點到「世界產物/xxx」，實際轉向到「世界地理/{宗門}/xxx」 */
+const PRODUCT_CROSSWALK = {
+  "執靈圖": ["千訣宗", "執靈圖"],
+  "灼草經": ["玄靈宗", "灼草經"],
+  "符海錄": ["衍天宗", "符海錄"],
+  "百器書": ["云嵐宗", "百器書"],
 };
 
-/** 基本設定 */
-const DATA_BASE = "data"; // 你的 JSON 目錄
-const LOADED_FLAG = Symbol("loadedOnce");
+/* ===== 初始化：收合行為 ===== */
+function setupCollapsibles() {
+  const toc = $("#toc");
+  if (!toc) return;
 
-/** -----------------------------
- * 2) 小工具
- * ----------------------------- */
-const $ = (sel, el = document) => el.querySelector(sel);
-const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
-const create = (tag, props = {}, ...children) => {
-  const el = document.createElement(tag);
-  Object.assign(el, props);
-  children.forEach((c) => {
-    if (c == null) return;
-    if (typeof c === "string") el.appendChild(document.createTextNode(c));
-    else el.appendChild(c);
-  });
-  return el;
-};
+  // 為「有子層」的 li 加可收合；僅限指定文字的項目
+  $$("#toc li").forEach((li) => {
+    const a = $("> a", li) || $("a", li);  // 該層標題連結
+    const sub = $("> ul", li);             // 子層 UL
+    if (!a || !sub) return;
 
-function setSectionLoading(section) {
-  section.dataset.state = "loading";
-  section.innerHTML = `<div class="loading">載入中…</div>`;
-}
+    const text = a.textContent.trim();
+    if (!COLLAPSIBLE_KEYS.has(text)) return;
 
-function setSectionError(section, msg) {
-  section.dataset.state = "error";
-  section.innerHTML = `<div class="error">❌ ${msg}</div>`;
-}
-
-function setSectionEmpty(section) {
-  section.dataset.state = "empty";
-  section.innerHTML = `<div class="empty">（尚無內容）</div>`;
-}
-
-/** -----------------------------
- * 3) 資料載入與渲染
- * 支援資料格式：
- * - 字串：直接顯示為 <p>
- * - 陣列：每一段 <p> 一段
- * - 物件（可選）：{ title?, subtitle?, blocks?: string[] | {type, text}[] }
- * ----------------------------- */
-async function loadSection(sectionId) {
-  const section = document.getElementById(sectionId);
-  if (!section) return;
-
-  // 若載過就不重複
-  if (section[LOADED_FLAG]) return;
-
-  // 找不到對應檔名則顯示空
-  const filename = SECTION_MAP[sectionId];
-  if (!filename) {
-    setSectionEmpty(section);
-    section[LOADED_FLAG] = true;
-    return;
-  }
-
-  setSectionLoading(section);
-
-  try {
-    const res = await fetch(`${DATA_BASE}/${filename}.json`, {
-      headers: { "Accept": "application/json" },
-    });
-
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-
-    const data = await res.json();
-    renderDataToSection(section, data);
-    section[LOADED_FLAG] = true;
-  } catch (err) {
-    console.error(`載入失敗：${filename}.json`, err);
-    setSectionError(section, `無法載入 ${filename}.json`);
-  }
-}
-
-function renderDataToSection(section, data) {
-  section.innerHTML = ""; // 清空
-
-  // 標題（若 JSON 內自帶）
-  if (data && typeof data === "object" && !Array.isArray(data)) {
-    const { title, subtitle, blocks } = data;
-
-    if (title) section.appendChild(create("h2", {}, title));
-    if (subtitle) section.appendChild(create("h3", {}, subtitle));
-
-    if (Array.isArray(blocks)) {
-      blocks.forEach((b) => {
-        if (typeof b === "string") {
-          section.appendChild(create("p", {}, b));
-        } else if (b && typeof b === "object") {
-          const type = b.type || "p";
-          const text = b.text ?? "";
-          // 安全起見一律文字插入（不信任外來 HTML）
-          section.appendChild(create(type, {}, String(text)));
-        }
-      });
-      return;
-    }
-  }
-
-  // 純陣列
-  if (Array.isArray(data)) {
-    if (data.length === 0) {
-      setSectionEmpty(section);
-      return;
-    }
-    data.forEach((paragraph) => {
-      section.appendChild(create("p", {}, String(paragraph)));
-    });
-    return;
-  }
-
-  // 純字串
-  if (typeof data === "string") {
-    if (data.trim() === "") {
-      setSectionEmpty(section);
-      return;
-    }
-    section.appendChild(create("p", {}, data));
-    return;
-  }
-
-  // 其他未知型態
-  section.appendChild(create("pre", {}, JSON.stringify(data, null, 2)));
-}
-
-/** -----------------------------
- * 4) Lazy Load：進入視口才載
- * ----------------------------- */
-let io;
-function setupIntersectionLoader() {
-  if (!("IntersectionObserver" in window)) {
-    // 後備方案：全部載
-    Object.keys(SECTION_MAP).forEach((id) => loadSection(id));
-    return;
-  }
-
-  io = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const sec = entry.target;
-          loadSection(sec.id);
-          io.unobserve(sec);
-        }
-      });
-    },
-    { rootMargin: "200px 0px 400px 0px", threshold: 0.05 }
-  );
-
-  // 對應 main 內所有 section 進行觀察
-  $$("#content > section").forEach((sec) => io.observe(sec));
-
-  // 預先載入前兩個章節，提升首屏體驗
-  const firstTwo = $$("#content > section").slice(0, 2);
-  firstTwo.forEach((sec) => {
-    loadSection(sec.id);
-    if (io) io.unobserve(sec);
-  });
-}
-
-/** -----------------------------
- * 5) Smooth Scroll + Scrollspy
- * ----------------------------- */
-function setupSmoothScroll() {
-  const links = $$("#toc a[href^='#']");
-  links.forEach((a) => {
-    a.addEventListener("click", (e) => {
-      e.preventDefault();
-      const id = decodeURIComponent(a.getAttribute("href").slice(1));
-      const target = document.getElementById(id);
-      if (!target) return;
-
-      // 確保已載入（若還沒載，先載）
-      loadSection(id).finally(() => {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
-        history.pushState(null, "", `#${id}`);
-      });
+    // 預設展開（你也可以改成 li.classList.add('collapsed') 預設收合）
+    li.classList.add("collapsible"); // 標記一下
+    // 點 li 區域時切換，但點真正的 <a> 仍可導向（保留導航）
+    li.addEventListener("click", (e) => {
+      // 如果點到連結本體，就不要攔截，保留原行為
+      if (e.target.closest("a")) return;
+      li.classList.toggle("collapsed");
     });
   });
 }
 
+/* ===== ScrollSpy：同步高亮 TOC 連結 ===== */
 function setupScrollSpy() {
-  const linkById = new Map();
-  $$("#toc a[href^='#']").forEach((a) => {
+  const links = $$("#toc a[href^='#']");
+  const map = new Map(); // sectionId -> link
+  links.forEach((a) => {
     const id = decodeURIComponent(a.getAttribute("href").slice(1));
-    linkById.set(id, a);
+    const sec = document.getElementById(id);
+    if (sec) map.set(id, a);
   });
 
-  const sections = $$("#content > section");
-
-  const spy = new IntersectionObserver(
+  const io = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         const id = entry.target.id;
-        const link = linkById.get(id);
+        const link = map.get(id);
         if (!link) return;
-
         if (entry.isIntersecting) {
-          // 清掉所有 active
-          $$("#toc a.active").forEach((x) => x.classList.remove("active"));
+          // 清掉舊 active
+          links.forEach((l) => l.classList.remove("active"));
           link.classList.add("active");
+          // 確保 link 所在父層展開
+          const li = link.closest("li");
+          const parents = li ? li.closest("#toc")?.querySelectorAll("li") : [];
+          // 把所有祖先 li 取消 collapsed
+          let p = li?.parentElement;
+          while (p && p !== document) {
+            if (p.tagName === "UL") {
+              const pli = p.closest("li");
+              if (pli) pli.classList.remove("collapsed");
+            }
+            p = p.parentElement;
+          }
         }
       });
     },
-    { rootMargin: "-20% 0px -70% 0px", threshold: 0.1 }
+    { rootMargin: "-30% 0px -60% 0px", threshold: 0.01 }
   );
 
-  sections.forEach((sec) => spy.observe(sec));
+  map.forEach((_, id) => {
+    const sec = document.getElementById(id);
+    if (sec) io.observe(sec);
+  });
 }
 
-/** -----------------------------
- * 6) 目次收合（有子清單的 li 可點擊展開/收起）
- * ----------------------------- */
-function setupCollapsibleTOC() {
-  // 讓含子層 ul 的 li 可點擊收合，但不影響點擊子層 a
+/* ===== 導航攔截：世界產物 → 各宗門同名文件 =====
+   實作邏輯：
+   - 偵測點擊的 TOC 連結的父鏈條（例如 世界產物 / 執靈圖）
+   - 若命中 PRODUCT_CROSSWALK，就改導到 世界地理/{宗門}/{文件} 對應的 section id
+*/
+function setupCrossLinks() {
   $("#toc")?.addEventListener("click", (e) => {
-    const triggerLi = e.target.closest("li");
-    if (!triggerLi) return;
+    const link = e.target.closest("a");
+    if (!link) return;
 
-    // 若點到的是 a，交給 smooth scroll
-    if (e.target.tagName.toLowerCase() === "a") return;
+    // 取得當前 a 的顯示文字
+    const leafText = link.textContent.trim();
+    // 往上回溯，抓取它的上層大分類（例如 世界產物 / 世界地理 等）
+    const li = link.closest("li");
+    if (!li) return;
+    const parentA = $(":scope > a", li.parentElement?.closest("li") || document.createElement("div"));
+    const parentText = parentA ? parentA.textContent.trim() : "";
 
-    const sub = triggerLi.querySelector(":scope > ul");
-    if (sub) {
-      triggerLi.classList.toggle("collapsed");
+    // 只在「世界產物」底下啟用 crosswalk
+    if (parentText === "世界產物" && PRODUCT_CROSSWALK[leafText]) {
+      e.preventDefault();
+      const [sect, doc] = PRODUCT_CROSSWALK[leafText]; // 例如 ["千訣宗","執靈圖"]
+
+      // 目標 section 的 id 規則（你可依你的 index.html 實際 id 改這裡）
+      // 這裡假定 section id = `${宗門}-${文件}` 的 slug
+      const targetId = slugify(`${sect}-${doc}`);
+
+      // 若頁面上已有該 section，直接跳；若沒有，也設 hash，後續 onhashchange 會嘗試載入
+      const target = document.getElementById(targetId);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        history.pushState(null, "", `#${encodeURIComponent(targetId)}`);
+      } else {
+        location.hash = `#${encodeURIComponent(targetId)}`;
+      }
     }
-  });
-
-  // 預設展開第一層，摺疊深層（可依喜好調整）
-  $$("#toc > nav > ul > li").forEach((li) => {
-    li.classList.remove("collapsed");
   });
 }
 
-/** -----------------------------
- * 7) Hash 直達
- * ----------------------------- */
-function handleInitialHash() {
-  const hash = decodeURIComponent(location.hash || "").replace(/^#/, "");
-  if (!hash) return;
+/* ===== 資料載入（選用）：依據 section id 讀取 /data/{key}.json =====
+   - section 元素：
+     * 若有 data-key，就用它當資料 key
+     * 否則以 id 當 key
+   - 檔案路徑：/data/{key}.json
+   - 你可以依照你的專案實際資料結構調整 getDataPath()
+*/
+function getDataPath(key) {
+  // 例： world-history -> /data/world-history.json
+  return `/data/${key}.json`;
+}
 
-  const target = document.getElementById(hash);
-  if (!target) return;
+async function loadSectionData(section) {
+  if (!section) return;
+  const key = section.dataset.key || section.id;
+  if (!key) return;
 
-  // 若此節尚未載入，先載
-  loadSection(hash).finally(() => {
-    target.scrollIntoView({ behavior: "instant", block: "start" });
-  });
+  section.setAttribute("data-state", "loading");
+  const loading = section.querySelector(".loading") || Object.assign(document.createElement("div"), { className: "loading", textContent: "Loading..." });
+  if (!loading.isConnected) section.prepend(loading);
 
-  // 展開對應目次（向上把父 li 展開）
-  const link = $(`#toc a[href="#${CSS.escape(hash)}"]`);
-  if (link) {
-    let li = link.closest("li");
-    while (li) {
-      li.classList.remove("collapsed");
-      li = li.parentElement?.closest("li");
-    }
+  try {
+    const res = await fetch(getDataPath(key));
+    if (!res.ok) throw new Error(res.status + " " + res.statusText);
+    const data = await res.json();
+
+    // 這裡的 render 依照你的資料格式客製（以下是簡易示意）
+    renderSection(section, data);
+    section.setAttribute("data-state", "ready");
+    loading.remove();
+  } catch (err) {
+    section.setAttribute("data-state", "error");
+    const errBox = section.querySelector(".error") || Object.assign(document.createElement("div"), { className: "error" });
+    errBox.textContent = `載入失敗：${err.message}`;
+    if (!errBox.isConnected) section.prepend(errBox);
+    loading.remove();
   }
 }
 
-/** -----------------------------
- * 8) 對外工具（可選）：全部重載
- * ----------------------------- */
-async function reloadAllSections() {
-  $$("#content > section").forEach((sec) => {
-    sec[LOADED_FLAG] = false;
-  });
-  if (io) io.disconnect();
-  setupIntersectionLoader();
+function renderSection(section, data) {
+  // 簡易渲染：把陣列段落或物件欄位轉成 <p> 清單
+  const host = section.querySelector(".content") || section;
+  // 清空舊內容（保留標題）
+  $$(".__auto", host).forEach((el) => el.remove());
+
+  if (Array.isArray(data)) {
+    data.forEach((para) => {
+      const p = document.createElement("p");
+      p.className = "__auto";
+      p.textContent = String(para);
+      host.appendChild(p);
+    });
+  } else if (data && typeof data === "object") {
+    Object.entries(data).forEach(([k, v]) => {
+      const h3 = document.createElement("h3");
+      h3.className = "__auto";
+      h3.textContent = k;
+      host.appendChild(h3);
+
+      const p = document.createElement("p");
+      p.className = "__auto";
+      p.textContent = typeof v === "string" ? v : JSON.stringify(v, null, 2);
+      host.appendChild(p);
+    });
+  } else if (typeof data === "string") {
+    const p = document.createElement("p");
+    p.className = "__auto";
+    p.textContent = data;
+    host.appendChild(p);
+  } else {
+    const empty = document.createElement("div");
+    empty.className = "empty __auto";
+    empty.textContent = "（空）";
+    host.appendChild(empty);
+  }
 }
 
-/** -----------------------------
- * 9) 啟動
- * ----------------------------- */
-document.addEventListener("DOMContentLoaded", () => {
-  setupIntersectionLoader();
-  setupSmoothScroll();
-  setupScrollSpy();
-  setupCollapsibleTOC();
-  handleInitialHash();
+/* ===== 根據 hash 顯示/載入對應 section ===== */
+function handleHashChange() {
+  const id = decodeURIComponent(location.hash.replace(/^#/, ""));
+  if (!id) return;
 
-  // 公用到 window（可選）
-  window._BCQY = {
-    reloadAllSections,
-    loadSection,
-  };
+  // 如果對應 section 不存在，就動態建立（可選）
+  let sec = document.getElementById(id);
+  if (!sec) {
+    sec = document.createElement("section");
+    sec.id = id;
+    const h2 = document.createElement("h2");
+    h2.textContent = id;
+    sec.appendChild(h2);
+    $("#content")?.appendChild(sec);
+  }
+
+  // 嘗試載入資料（依 id 或 data-key）
+  loadSectionData(sec);
+
+  // 捲動到可視
+  sec.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ===== 啟動 ===== */
+window.addEventListener("DOMContentLoaded", () => {
+  setupCollapsibles();
+  setupCrossLinks();
+  setupScrollSpy();
+
+  // 初次載入（若有 hash）
+  if (location.hash) handleHashChange();
 });
+
+// 之後使用者切 hash
+window.addEventListener("hashchange", handleHashChange);

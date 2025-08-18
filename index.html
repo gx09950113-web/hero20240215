@@ -6,9 +6,8 @@
   <title>百川群英錄｜索引</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- 先載 marked -->
+  <!-- 先載 marked，再載 app.js -->
   <script src="assets/libs/marked.js"></script>
-  <!-- 再載 app.js -->
   <script type="module" src="app.js"></script>
 </head>
 <body>
@@ -42,14 +41,6 @@
           世界地理
           <ul>
             <li><a href="#climate">世界氣候</a></li>
-            <li>
-              皇城
-              <ul>
-                <li><a href="#imperial-customs">皇城風氣</a></li>
-                <li><a href="#tax">稅務</a></li>
-                <li><a href="#law">百川律典</a></li>
-              </ul>
-            </li>
             <li>
               千訣宗
               <ul>
@@ -107,12 +98,13 @@
     </nav>
   </aside>
 
-  <!-- 內容區：每個章節有對應id，預設空容器 -->
+  <!-- 內容區：README 在最前面 -->
   <main id="content">
-  <section id="readme">
-    <h2>README</h2>
-    <div class="content"></div>
-  </section>
+    <section id="readme">
+      <h2>README</h2>
+      <div class="content"></div>
+    </section>
+
     <section id="basic-principles"></section>
     <section id="world-history"></section>
     <section id="divine-orb"></section>
@@ -165,6 +157,22 @@
     <section id="prod-lingcaojing"></section>
   </main>
 
+  <!-- README 初始彈窗 -->
+  <div id="readme-modal" class="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="readme-title">
+      <h2 id="readme-title">README</h2>
+      <div id="readme-modal-content" class="modal-content"></div>
+      <div class="modal-actions">
+        <label class="modal-checkbox">
+          <input type="checkbox" id="readme-dont-show" />
+          下次不要再出現
+        </label>
+        <button id="readme-ok">我知道了</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 頁尾 -->
   <footer>
     <p>© 2024 百川群英錄 • 保留一切權利</p>
@@ -177,5 +185,3 @@
   </footer>
 </body>
 </html>
-
-

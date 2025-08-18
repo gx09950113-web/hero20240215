@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>百川群英錄｜索引</title>
   <link rel="stylesheet" href="style.css" />
+
+  <!-- 先載 marked -->
   <script src="assets/libs/marked.js"></script>
+  <!-- 再載 app.js -->
+  <script type="module" src="app.js"></script>
 </head>
 <body>
   <!-- 🗂️目次 -->
@@ -105,6 +109,10 @@
 
   <!-- 內容區：每個章節有對應id，預設空容器 -->
   <main id="content">
+  <section id="readme">
+    <h2>README</h2>
+    <div class="content"></div>
+  </section>
     <section id="basic-principles"></section>
     <section id="world-history"></section>
     <section id="divine-orb"></section>
@@ -169,4 +177,5 @@
   </footer>
 </body>
 </html>
+
 

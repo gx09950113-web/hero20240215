@@ -138,7 +138,7 @@ function setupCrossLinks() {
 /* ===== 資料載入路徑：README 用 .md，其它用 /data/{key}.json ===== */
 function getDataPath(key) {
   const k = String(key).toLowerCase();
-  if (k === "readme") return "/README.md";     // ⭐ README 特例
+  if (k === "readme") return "README.md";     // ⭐ README 特例
   return `/data/${key}.json`;
 }
 
@@ -263,3 +263,4 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // 之後使用者切 hash
 window.addEventListener("hashchange", handleHashChange);
+

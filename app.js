@@ -1,8 +1,9 @@
 /* =======================================================
-   app.js — TOC 可收合 + 世界產物條目跨區對應 + README 支援
+   app.js — TOC 可收合 + 世界產物條目跨區對應 + README.md 渲染
    - 指定項目：基礎世界觀 / 修仙基本知識 / 世界地理 / 世界產物 可收合
    - 世界產物子項目 → 對應到各宗門底下同名文件
-   - ScrollSpy、hash 導航與資料載入（支援 /README.md + /data/{key}.json）
+   - README.md 初始載入並用 marked 轉成 HTML
+   - 其它章節依 /data/{key}.json 載入
    ======================================================= */
 
 /* 快捷選擇器 */
@@ -23,6 +24,10 @@ const COLLAPSIBLE_KEYS = new Set([
   "修仙基本知識",
   "世界地理",
   "世界產物",
+  "千訣宗",   // 👈 新增
+  "玄靈宗",   // 👈 新增
+  "衍天宗",   // 👈 新增
+  "云嵐宗",
 ]);
 
 /* ===== 世界產物 → 各宗門同名文件 的對應關係 =====
@@ -41,18 +46,17 @@ function setupCollapsibles() {
 
   // 為「有子層」的 li 加可收合；僅限指定文字的項目
   $$("#toc li").forEach((li) => {
-    // 這層的標題連結（大分類通常是純文字，但保險抓第一個 <a>）
-    const selfA = $("> a", li) || $("a", li);
-    const sub = $("> ul", li);
-    if (!sub) return;
+    const a = $("> a", li) || $("a", li);  // 該層標題連結
+    const sub = $("> ul", li);             // 子層 UL
+    if (!a || !sub) return;
 
-    const label = (selfA?.textContent || li.firstChild?.textContent || "").trim();
-    if (!COLLAPSIBLE_KEYS.has(label)) return;
+    const text = a.textContent.trim();
+    if (!COLLAPSIBLE_KEYS.has(text)) return;
 
-    li.classList.add("collapsible");
+    li.classList.add("collapsible"); // 標記一下
     // 點 li 區域時切換，但點真正的 <a> 仍可導向（保留導航）
     li.addEventListener("click", (e) => {
-      if (e.target.closest("a")) return;   // 交給超連結自己處理
+      if (e.target.closest("a")) return; // 點到連結就放行
       li.classList.toggle("collapsed");
     });
   });
@@ -75,14 +79,19 @@ function setupScrollSpy() {
         const link = map.get(id);
         if (!link) return;
         if (entry.isIntersecting) {
+          // 清掉舊 active
           links.forEach((l) => l.classList.remove("active"));
           link.classList.add("active");
 
-          // 展開鏈上所有父層 li
-          let li = link.closest("li");
-          while (li) {
-            li.classList.remove("collapsed");
-            li = li.parentElement?.closest("li");
+          // 確保 link 所在父層展開
+          const li = link.closest("li");
+          let p = li?.parentElement;
+          while (p && p !== document) {
+            if (p.tagName === "UL") {
+              const pli = p.closest("li");
+              if (pli) pli.classList.remove("collapsed");
+            }
+            p = p.parentElement;
           }
         }
       });
@@ -106,11 +115,10 @@ function setupCrossLinks() {
     const li = link.closest("li");
     if (!li) return;
 
-    const parentLi = li.parentElement?.closest("li");
-    const parentA  = parentLi ? $(":scope > a", parentLi) : null;
+    const parentA = $(":scope > a", li.parentElement?.closest("li") || document.createElement("div"));
     const parentText = parentA ? parentA.textContent.trim() : "";
 
-    // 僅在「世界產物」底下啟用 crosswalk
+    // 只在「世界產物」底下啟用 crosswalk
     if (parentText === "世界產物" && PRODUCT_CROSSWALK[leafText]) {
       e.preventDefault();
       const [sect, doc] = PRODUCT_CROSSWALK[leafText]; // 例如 ["千訣宗","執靈圖"]
@@ -127,18 +135,14 @@ function setupCrossLinks() {
   });
 }
 
-/* =======================================================
- * 資料載入：README.md & JSON
- * ======================================================= */
-
-/* 必改 1：README 特判 */
+/* ===== 資料載入路徑：README 用 .md，其它用 /data/{key}.json ===== */
 function getDataPath(key) {
   const k = String(key).toLowerCase();
-  if (k === "readme") return "/README.md";      // 根目錄 README.md
+  if (k === "readme") return "/README.md";     // ⭐ README 特例
   return `/data/${key}.json`;
 }
 
-/* 必改 2：依副檔名決定用 text() 或 json() */
+/* ===== 載入 section 資料：自動判斷 .md or .json ===== */
 async function loadSectionData(section) {
   if (!section) return;
   const key = section.dataset.key || section.id;
@@ -149,18 +153,22 @@ async function loadSectionData(section) {
   if (!loading.isConnected) section.prepend(loading);
 
   try {
-    const url = getDataPath(key);
-    const res = await fetch(url, { cache: "no-cache" });
+    const path = getDataPath(key);
+    const res = await fetch(path);
     if (!res.ok) throw new Error(res.status + " " + res.statusText);
 
-    let data;
-    if (url.endsWith(".md")) {
-      data = await res.text();   // README.md
+    if (path.endsWith(".md")) {
+      // Markdown → HTML（需要 index.html 先載入 assets/libs/marked.js）
+      const md = await res.text();
+      const html = (typeof marked?.parse === "function")
+        ? marked.parse(md)
+        : (typeof marked === "function" ? marked(md) : md); // 極端 fallback
+      renderMarkdown(section, html);
     } else {
-      data = await res.json();   // 其他 JSON
+      const data = await res.json();
+      renderSection(section, data);
     }
 
-    renderSection(section, data);
     section.setAttribute("data-state", "ready");
     loading.remove();
   } catch (err) {
@@ -172,30 +180,12 @@ async function loadSectionData(section) {
   }
 }
 
-/* 必改 3：renderSection — README 支援 marked 或純文字 */
+/* ===== 渲染 JSON（維持原本行為） ===== */
 function renderSection(section, data) {
   const host = section.querySelector(".content") || section;
+  // 清空舊內容（保留非自動產生元素）
   $$(".__auto", host).forEach((el) => el.remove());
 
-  // README.md 特判（支援 marked.js，無則退回 <pre>）
-  const keyLower = (section.dataset.key || section.id || "").toLowerCase();
-  const isReadme = keyLower === "readme";
-  if (isReadme) {
-    const box = document.createElement("div");
-    box.className = "__auto";
-    if (typeof marked !== "undefined" && typeof marked.parse === "function") {
-      box.innerHTML = marked.parse(String(data));   // Markdown → HTML
-    } else {
-      const pre = document.createElement("pre");    // 後備純文字
-      pre.className = "__auto";
-      pre.textContent = String(data);
-      box.appendChild(pre);
-    }
-    host.appendChild(box);
-    return; // 不跑下面 JSON render
-  }
-
-  // ===== 原 JSON / 字串渲染 =====
   if (Array.isArray(data)) {
     data.forEach((para) => {
       const p = document.createElement("p");
@@ -228,6 +218,12 @@ function renderSection(section, data) {
   }
 }
 
+/* ===== 渲染 Markdown（readme 用） ===== */
+function renderMarkdown(section, html) {
+  const host = section.querySelector(".content") || section;
+  host.innerHTML = html; // README 是你自己寫的可信來源，直接插入
+}
+
 /* ===== 根據 hash 顯示/載入對應 section ===== */
 function handleHashChange() {
   const id = decodeURIComponent(location.hash.replace(/^#/, ""));
@@ -244,18 +240,11 @@ function handleHashChange() {
     $("#content")?.appendChild(sec);
   }
 
+  // 嘗試載入資料（依 id 或 data-key）
   loadSectionData(sec);
-  sec.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  // 展開 TOC 對應祖先層
-  const link = $(`#toc a[href="#${CSS.escape(id)}"]`);
-  if (link) {
-    let li = link.closest("li");
-    while (li) {
-      li.classList.remove("collapsed");
-      li = li.parentElement?.closest("li");
-    }
-  }
+  // 捲動到可視
+  sec.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 /* ===== 啟動 ===== */
@@ -264,13 +253,13 @@ window.addEventListener("DOMContentLoaded", () => {
   setupCrossLinks();
   setupScrollSpy();
 
-  // 初次載入：若有 hash 就處理；否則預設顯示 README
-  if (location.hash) {
-    handleHashChange();
-  } else {
-    location.hash = "#readme";   // 預設讀 README.md
-  }
+  // ⭐ 先載入 README（需要 index.html 有 <section id="readme"><div class="content"></div>）
+  const readmeSec = document.getElementById("readme");
+  if (readmeSec) loadSectionData(readmeSec);
+
+  // 若網址列有 #hash，就切到對應章節
+  if (location.hash) handleHashChange();
 });
 
-// 之後使用者切換 hash
+// 之後使用者切 hash
 window.addEventListener("hashchange", handleHashChange);

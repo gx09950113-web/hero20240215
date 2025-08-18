@@ -1,0 +1,297 @@
+/* =========================================
+   百川群英錄 | style.css (with custom font)
+   - 自訂字型 ThePeakFontBeta
+   - 圓滑柔和外框
+   - 自動亮/暗色 (跟隨系統)
+   - 按鈕 80% 不透明
+   - TOC 摺疊 + Scrollspy
+   - loading / error / empty 狀態
+   ========================================= */
+
+/* 自訂字型 ---------------------------------------------- */
+@font-face {
+  font-family: "ThePeakFontBeta";
+  src: url("assets/ThePeakFontBeta_V0.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 系統色彩與基礎排版 ------------------------------------- */
+:root {
+  /* 亮色 */
+  --bg: #f7f8fb;
+  --fg: #1f2430;
+  --muted: #6b7280;
+  --card: #ffffff;
+  --border: #e6e8ef;
+  --accent: #7c3aed;
+  --accent-contrast: #ffffff;
+  --toc-bg: #ffffff;
+  --shadow: 0 12px 28px rgba(16, 24, 40, 0.06);
+  --ring: rgba(124, 58, 237, 0.35);
+
+  --radius-lg: 18px;
+  --radius-sm: 12px;
+
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+
+  color-scheme: light dark;
+  --content-max: 1200px;
+  --section-gap: 18px;
+  --toc-w: 280px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 暗色 */
+    --bg: #0e1117;
+    --fg: #e5e7eb;
+    --muted: #9aa0a6;
+    --card: #121722;
+    --border: #1f2533;
+    --accent: #a78bfa;
+    --accent-contrast: #0b0f16;
+    --toc-bg: #0f1522;
+    --shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+    --ring: rgba(167, 139, 250, 0.35);
+  }
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font: 16px/1.65 "ThePeakFontBeta", ui-sans-serif, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, "Noto Sans", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+  background:
+    radial-gradient(1200px 800px at 10% -10%, rgba(124,58,237,.06), transparent 40%) no-repeat,
+    var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* 兩欄布局 */
+  display: grid;
+  grid-template-columns: minmax(220px, var(--toc-w)) 1fr;
+  gap: var(--space-5);
+  padding: var(--space-5);
+}
+
+/* 連結 --------------------------------------------------- */
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+/* 側邊 TOC ------------------------------------------------ */
+#toc {
+  background: var(--toc-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  position: sticky;
+  top: var(--space-5);
+  align-self: start;
+  max-height: calc(100dvh - 2 * var(--space-5));
+  overflow: auto;
+}
+
+#toc h2 {
+  margin: 0 0 var(--space-2);
+  font-size: 18px;
+  letter-spacing: .5px;
+}
+
+#toc nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#toc li {
+  position: relative;
+  margin: 2px 0;
+  padding: 0;
+  border-radius: var(--radius-sm);
+}
+
+/* 摺疊狀態（JS 會切換 .collapsed） */
+#toc li.collapsed > ul { display: none; }
+
+/* 有子層的項目給箭頭（Chrome/Safari 支援 :has） */
+#toc li:has(> ul) { padding-left: 18px; }
+#toc li:has(> ul)::before {
+  content: "▸";
+  position: absolute;
+  left: 2px;
+  top: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  transition: transform .18s ease;
+}
+#toc li:not(.collapsed):has(> ul)::before { transform: rotate(90deg); }
+
+/* TOC 連結外觀（小膠囊） */
+#toc a {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 999px;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+#toc a:hover { background: rgba(124,58,237,0.09); }
+
+/* Scrollspy 高亮（app.js 會加 .active） */
+#toc a.active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* 內容區 -------------------------------------------------- */
+#content {
+  max-width: var(--content-max);
+  width: 100%;
+  margin-inline: auto;
+}
+
+/* 每個 section 卡片：圓滑、柔和陰影 */
+#content > section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: clamp(16px, 2vw, 28px);
+  margin-bottom: var(--section-gap);
+  transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+}
+
+/* 區塊內標題與段落排版 */
+#content h2 {
+  margin: 0 0 6px;
+  font-size: clamp(20px, 3vw, 26px);
+}
+#content h3 {
+  margin: 6px 0 10px;
+  font-size: clamp(16px, 2.4vw, 20px);
+  color: var(--muted);
+}
+#content p { margin: 10px 0; }
+
+/* 狀態樣式：loading / error / empty ---------------------- */
+.loading,
+.error,
+.empty {
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+/* Loading 骨架 */
+[data-state="loading"] .loading {
+  position: relative;
+  background: linear-gradient(90deg,
+    rgba(180,186,200,0.10), rgba(180,186,200,0.22), rgba(180,186,200,0.10));
+  overflow: hidden;
+}
+[data-state="loading"] .loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg,
+    transparent, rgba(255,255,255,0.36), transparent);
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+
+/* Error */
+.error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+
+/* Empty */
+.empty {
+  color: var(--muted);
+  background: linear-gradient(0deg, rgba(125,125,125,0.05), transparent);
+  border: 1px dashed var(--border);
+}
+
+/* 通用按鈕（80% 不透明） ---------------------------------- */
+button, .btn, input[type="button"], input[type="submit"] {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  opacity: .8;                 /* ✅ 80% */
+  cursor: pointer;
+  transition: opacity .15s ease, box-shadow .15s ease, transform .04s ease;
+}
+button:hover, .btn:hover,
+input[type="button"]:hover, input[type="submit"]:hover {
+  opacity: 1;                  /* hover 回到 100% */
+  box-shadow: 0 0 0 4px var(--ring);
+}
+button:active, .btn:active,
+input[type="button"]:active, input[type="submit"]:active {
+  transform: translateY(1px);
+}
+button:focus-visible, .btn:focus-visible,
+input[type="button"]:focus-visible, input[type="submit"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+/* 頁尾 ---------------------------------------------------- */
+footer {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--muted);
+  margin-top: var(--space-5);
+}
+footer p { margin: 0 0 6px; }
+footer a { color: inherit; }
+footer a:hover { color: var(--accent); }
+
+/* 響應式：手機優化 ---------------------------------------- */
+@media (max-width: 980px) {
+  body {
+    grid-template-columns: 1fr;
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+  #toc {
+    position: relative;
+    top: 0;
+    max-height: none;
+    margin-bottom: var(--space-3);
+  }
+  #content > section { border-radius: 16px; }
+}
+
+/* 更緊湊的小螢幕（~6.3"） -------------------------------- */
+@media (max-width: 420px) {
+  :root { --section-gap: 14px; }
+  #toc h2 { font-size: 16px; }
+  #toc a { padding: 7px 9px; }
+  #content > section { padding: 14px; }
+}

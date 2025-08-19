@@ -271,13 +271,23 @@ footer {
   box-shadow: var(--shadow);
 }
 
+
 .site-header .home-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;               /* 圖片與文字間距 */
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--fg);
   text-decoration: none;
   transition: color 0.2s ease, transform 0.1s ease;
 }
+.site-header .home-btn img.logo {
+  height: 28px;           /* 控制 logo 大小 */
+  width: auto;
+}
+
+
 .site-header .home-btn:hover {
   color: var(--accent);
   transform: translateY(-1px);
@@ -287,6 +297,16 @@ footer {
 @media (max-width: 768px) {
   .site-header {
     justify-content: flex-end;
+  }
+}
+
+/* 手機版縮小 logo 尺寸 */
+@media (max-width: 480px) {
+  .site-header .home-btn img.logo {
+    height: 22px;  /* 比桌機版小一點 */
+  }
+  .site-header .home-btn {
+    font-size: 1rem;  /* 文字也稍微縮小 */
   }
 }
 

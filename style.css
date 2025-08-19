@@ -1,17 +1,22 @@
 /* =========================================
    百川群英錄 | style.css
    - 自訂字型 ThePeakFontBeta
-   - 橫向 TOC (桌機 hover / 手機 click)
-   - Modal 彈窗
-   - 100% 不透明按鈕
+   - 自動亮/暗色 (跟隨系統)
+   - 橫向 TOC (桌機) + 點擊展開 (手機)
+   - 三層選單修補（避免重疊）
+   - loading / error / empty 狀態
    ========================================= */
 
+/* 自訂字型 ---------------------------------------------- */
 @font-face {
   font-family: "ThePeakFontBeta";
   src: url("assets/KurewaGothicCjkTc-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
   font-display: swap;
 }
 
+/* 系統色彩與基礎排版 ------------------------------------- */
 :root {
   --bg: #f7f8fb;
   --fg: #1f2430;
@@ -21,14 +26,21 @@
   --accent: #7c3aed;
   --accent-contrast: #ffffff;
   --toc-bg: #ffffff;
-  --shadow: 0 6px 20px rgba(16,24,40,0.08);
-  --ring: rgba(124,58,237,0.35);
+  --shadow: 0 12px 28px rgba(16, 24, 40, 0.06);
+  --ring: rgba(124, 58, 237, 0.35);
 
   --radius-lg: 18px;
   --radius-sm: 12px;
+
+  --space-1: 8px;
   --space-2: 12px;
   --space-3: 16px;
   --space-4: 24px;
+  --space-5: 32px;
+
+  color-scheme: light dark;
+  --content-max: 1200px;
+  --section-gap: 18px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -41,25 +53,42 @@
     --accent: #a78bfa;
     --accent-contrast: #0b0f16;
     --toc-bg: #0f1522;
-    --shadow: 0 6px 20px rgba(0,0,0,0.6);
-    --ring: rgba(167,139,250,0.35);
+    --shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+    --ring: rgba(167, 139, 250, 0.35);
   }
 }
 
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
 body {
-  margin: 0;
   font: 16px/1.65 "ThePeakFontBeta", ui-sans-serif, -apple-system, BlinkMacSystemFont,
         "Segoe UI", Roboto, "Noto Sans", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
   background: var(--bg);
   color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--space-4);
+  padding: var(--space-4);
 }
+
+/* 連結 --------------------------------------------------- */
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
 
 /* TOC 橫向 ------------------------------------------------ */
 #toc {
   background: var(--toc-bg);
   padding: var(--space-2);
-  position: sticky;
-  top: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  isolation: isolate;
   z-index: 100;
 }
 #toc nav ul {
@@ -67,6 +96,7 @@ body {
   margin: 0; padding: 0;
   display: flex;
   gap: var(--space-2);
+  flex-wrap: wrap;
 }
 #toc li { position: relative; }
 #toc > nav > ul > li > a {
@@ -103,60 +133,73 @@ body {
 }
 #toc li ul li a:hover { background: rgba(124,58,237,0.08); }
 
+/* ===== 修補：避免多個子選單同時打開、互相疊在一起 ===== */
+#toc > nav > ul > li:hover > ul { display: block; }
+#toc li ul li > ul {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  min-width: 200px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  padding: 6px 0;
+  z-index: 250;
+  opacity: 0;
+  transform: translateX(8px);
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+#toc li ul > li:hover > ul {
+  display: block;
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
 /* ScrollSpy 高亮 */
 #toc a.active {
   background: var(--accent);
   color: var(--accent-contrast);
 }
 
-/* 內容 ---------------------------------------------------- */
+/* 內容區 -------------------------------------------------- */
 #content {
-  max-width: 960px;
-  margin: 20px auto;
-  padding: 0 var(--space-3);
+  max-width: var(--content-max);
+  width: 100%;
+  margin-inline: auto;
 }
 #content > section {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  padding: var(--space-4);
-  margin-bottom: var(--space-4);
+  padding: clamp(16px, 2vw, 28px);
+  margin-bottom: var(--section-gap);
 }
+#content h2 { margin: 0 0 6px; font-size: clamp(20px, 3vw, 26px); }
+#content h3 { margin: 6px 0 10px; font-size: clamp(16px, 2.4vw, 20px); color: var(--muted); }
+#content p { margin: 10px 0; }
 
-/* Modal --------------------------------------------------- */
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.5);
-  z-index: 200;
-  align-items: center;
-  justify-content: center;
+/* 狀態樣式 ------------------------------------------------ */
+.loading, .error, .empty {
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
 }
-.modal.open { display: flex; }
-.modal-content {
-  background: var(--card);
-  border-radius: var(--radius-lg);
-  max-width: 800px;
-  width: 90%;
-  max-height: 80%;
-  overflow-y: auto;
-  padding: var(--space-4);
-  position: relative;
-  box-shadow: var(--shadow);
+.error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
 }
-.modal-close {
-  position: absolute;
-  top: 10px; right: 10px;
-  font-size: 22px;
-  background: transparent;
-  border: none;
+.empty {
   color: var(--muted);
-  cursor: pointer;
+  background: linear-gradient(0deg, rgba(125,125,125,0.05), transparent);
+  border: 1px dashed var(--border);
 }
 
-/* 按鈕 100% 不透明 --------------------------------------- */
+/* 通用按鈕：100% 不透明 ----------------------------------- */
 button, .btn, input[type="button"], input[type="submit"] {
   appearance: none;
   border: 1px solid var(--border);
@@ -165,35 +208,44 @@ button, .btn, input[type="button"], input[type="submit"] {
   padding: 10px 14px;
   border-radius: 999px;
   font-weight: 600;
+  letter-spacing: .2px;
+  opacity: 1; /* ✅ 改為 100% */
   cursor: pointer;
-  opacity: 1;
-  transition: box-shadow .15s ease, transform .05s ease;
+  transition: opacity .15s ease, box-shadow .15s ease, transform .04s ease;
 }
 button:hover, .btn:hover,
 input[type="button"]:hover, input[type="submit"]:hover {
-  box-shadow: 0 0 0 3px var(--ring);
+  box-shadow: 0 0 0 4px var(--ring);
 }
 button:active, .btn:active,
 input[type="button"]:active, input[type="submit"]:active {
   transform: translateY(1px);
 }
 
-/* 響應式：手機點擊展開 ---------------------------------- */
+/* 頁尾 ---------------------------------------------------- */
+footer {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--muted);
+  margin-top: var(--space-5);
+}
+
+/* 響應式：手機優化 ---------------------------------------- */
 @media (max-width: 980px) {
-  #toc nav ul { flex-wrap: wrap; }
+  body { grid-template-rows: auto 1fr; padding: var(--space-3); }
+  #toc nav ul { flex-direction: column; gap: 4px; }
   #toc li ul {
     position: static;
-    display: none !important;
+    border: none;
     box-shadow: none;
-    border: 1px dashed var(--border);
-    margin-top: 6px;
+    border-radius: 0;
+    padding-left: 16px;
   }
-  #toc li.open > ul { display: block !important; }
-  #toc li:has(> ul) > a {
-    display: flex; justify-content: space-between; align-items: center;
+  #toc li ul li > ul {
+    position: static;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    padding-left: 16px;
   }
-  #toc li:has(> ul) > a::after {
-    content: "▾"; margin-left: 8px; font-size: 12px;
-  }
-  #toc li.open > a::after { transform: rotate(-180deg); }
 }

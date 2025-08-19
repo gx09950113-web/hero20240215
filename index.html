@@ -5,15 +5,17 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>百川群英錄｜索引</title>
   <link rel="stylesheet" href="style.css" />
-
-  <!-- 離線 Markdown 解析器（請確保檔案存在） -->
   <script src="assets/libs/marked.js"></script>
-  <!-- 你的主程式 -->
-  <script type="module" src="app.js"></script>
+  <script defer src="app.js"></script>
 </head>
 <body>
 
-  <!-- ⛳ 置頂導覽列 -->
+  <!-- 🔰首頁按鈕（桌機左上／手機右上，之後在 style.css 補樣式） -->
+  <header class="site-header">
+    <a href="#homepage" class="home-btn" aria-label="回到首頁">百川群英錄</a>
+  </header>
+
+  <!-- ⛳ 置頂導覽列（原本的 TOC，內容不動） -->
   <header id="toc" role="navigation" aria-label="主導覽">
     <nav>
       <ul>
@@ -109,62 +111,19 @@
     </nav>
   </header>
 
-  <!-- 主內容：你也可保留 readme 區塊（若不想重複顯示，可移除） -->
+  <!-- 主內容 -->
   <main id="content">
-    <section id="readme">
-      <h2>README</h2>
-      <div class="content"></div>
+    <!-- 🏠 首頁固定內容（新增） -->
+    <section id="homepage">
+      <h2>歡迎</h2>
+      <p>歡迎來到百川群英錄超級簡單入門網站！</p>
+      <p>本網站旨在於讓未接觸過群英錄的大家能快速知道整個世界的架構。</p>
+      <p>具體玩法請根據下方連結前往官方網站或官方Discord！<br>
+      裡面會有專人跟許多前輩玩家替您解惑！</p>
     </section>
+  </main> <!-- ✅ 補上 main 關閉標籤 -->
 
-    <!-- 範例章節（可依需要增刪） -->
-    <section id="basic-principles"></section>
-    <section id="world-history"></section>
-    <section id="divine-orb"></section>
-    <section id="yin-yang"></section>
-
-    <section id="qi"></section>
-    <section id="root"></section>
-    <section id="power"></section>
-    <section id="benefits"></section>
-    <section id="human-cultivation"></section>
-    <section id="beast-cultivation"></section>
-    <section id="demon-cultivation"></section>
-
-    <section id="climate"></section>
-    <section id="qj-history"></section>
-    <section id="qj-culture"></section>
-    <section id="qj-structure"></section>
-    <section id="zhilingtu"></section>
-
-    <section id="xl-history"></section>
-    <section id="yang-vs-yin"></section>
-    <section id="xl-structure"></section>
-    <section id="zhuocaoping"></section>
-
-    <section id="yt-history"></section>
-    <section id="yt-culture"></section>
-    <section id="yt-structure"></section>
-    <section id="fuhailu"></section>
-
-    <section id="yl-history"></section>
-    <section id="yl-culture"></section>
-    <section id="yl-structure"></section>
-    <section id="baiqishu"></section>
-
-    <section id="yuqing"></section>
-
-    <section id="prod-zhilingtu"></section>
-    <section id="prod-zhuocaoping"></section>
-    <section id="prod-fuhailu"></section>
-    <section id="prod-baiqishu"></section>
-    <section id="prod-menu"></section>
-    <section id="prod-wanxiezong"></section>
-    <section id="prod-fanshanxi"></section>
-    <section id="prod-jinyuyan"></section>
-    <section id="prod-lingcaojing"></section>
-  </main>
-
-  <!-- README 彈窗 -->
+  <!-- README 彈窗（保持原結構） -->
   <div id="readme-modal" class="modal" hidden>
     <div class="modal-backdrop"></div>
     <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="readme-title">

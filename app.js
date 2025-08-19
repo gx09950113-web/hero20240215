@@ -1,238 +1,206 @@
-/* =======================================================
-   app.js — 置頂 TOC + README 彈窗 + 內容載入 + 跨跳
-   ======================================================= */
+// =========================================
+// 百川群英錄 | app.js（自動配合 index 版）
+// =========================================
 
-/* 小工具 */
-const $  = (s, el = document) => el.querySelector(s);
-const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
-
-/* 產品（世界產物）→ 各宗門對應 */
-const PRODUCT_MAP = new Map([
-  ["#prod-zhilingtu",   "#zhilingtu"],    // 世界產物/執靈圖 → 千訣宗/執靈圖
-  ["#prod-zhuocaoping", "#zhuocaoping"],  // 世界產物/灼草經 → 玄靈宗/灼草經
-  ["#prod-fuhailu",     "#fuhailu"],      // 世界產物/符海錄 → 衍天宗/符海錄
-  ["#prod-baiqishu",    "#baiqishu"],     // 世界產物/百器書 → 云嵐宗/百器書
-]);
-
-/* ========= 導航行為：世界產物跨跳 ========= */
-function setupProductCrosswalk() {
-  $("#toc")?.addEventListener("click", (e) => {
-    const a = e.target.closest("a[href^='#']");
-    if (!a) return;
-    const href = a.getAttribute("href");
-    if (!href) return;
-
-    if (PRODUCT_MAP.has(href)) {
-      e.preventDefault();
-      const to = PRODUCT_MAP.get(href);
-      if (to) location.hash = to;
-    }
-  });
-}
-
-/* ========= ScrollSpy：同步 TOC 高亮 ========= */
-function setupScrollSpy() {
-  const linkById = new Map();
-  $$("#toc a[href^='#']").forEach((a) => {
-    const id = decodeURIComponent(a.getAttribute("href").slice(1));
-    if (id) linkById.set(id, a);
-  });
-
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      const id = entry.target.id;
-      const link = linkById.get(id);
-      if (!link) return;
-      if (entry.isIntersecting) {
-        $$("#toc a").forEach((x) => x.classList.remove("active"));
-        link.classList.add("active");
+// ---------- 小工具 ----------
+async function fetchFirst(paths) {
+  for (const url of paths) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const text = await res.text();
+        return { text, url };
       }
-    });
-  }, { rootMargin: "-30% 0px -60% 0px", threshold: 0.01 });
-
-  linkById.forEach((_, id) => {
-    const sec = document.getElementById(id);
-    if (sec) io.observe(sec);
-  });
-}
-
-/* ========= 資料來源決策 ========= */
-function getDataPath(key) {
-  const k = String(key).toLowerCase();
-  if (k === "readme") return "/README.md";
-  return `/data/${key}.json`;
-}
-
-/* ========= 載入指定 section 的資料 ========= */
-async function loadSectionData(section) {
-  if (!section) return;
-  const key = section.dataset.key || section.id;
-  if (!key) return;
-
-  section.setAttribute("data-state", "loading");
-  let loading = section.querySelector(".loading");
-  if (!loading) {
-    loading = Object.assign(document.createElement("div"), { className: "loading", textContent: "Loading..." });
-    section.prepend(loading);
+    } catch (_) {}
   }
+  throw new Error("No available source: " + paths.join(", "));
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function idToDataKey(id) {
+  return id.startsWith("prod-") ? id.slice(5) : id;
+}
+function buildCandidatePaths(key) {
+  return [`data/${key}.json`, `data/${key}.md`, `data/${key}.txt`];
+}
+function isLikelyMarkdown(text) {
+  return /(^|\n)#{1,6}\s|(^|\n)[-\*+]\s|(^|\n)\d+\.\s/.test(text);
+}
+
+// ---------- 內容載入 ----------
+async function loadSectionAuto(sectionEl) {
+  const id = sectionEl.getAttribute("id");
+  if (!id) return;
+  if (id === "homepage") return;
+  if (id === "readme") return;
+
+  const key = idToDataKey(id);
+  const candidates = buildCandidatePaths(key);
+
+  sectionEl.dataset.state = "loading";
 
   try {
-    const url = getDataPath(key);
-    const res = await fetch(url, { cache: "no-cache" });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const { text, url } = await fetchFirst(candidates);
+    let html = "";
 
-    const data = url.endsWith(".md") ? await res.text() : await res.json();
-    renderSection(section, data);
-    section.setAttribute("data-state", "ready");
-  } catch (err) {
-    section.setAttribute("data-state", "error");
-    const errBox = section.querySelector(".error") || Object.assign(document.createElement("div"), { className: "error" });
-    errBox.textContent = `載入失敗：${err.message}`;
-    if (!errBox.isConnected) section.prepend(errBox);
-  } finally {
-    loading?.remove();
-  }
-}
-
-/* ========= 把資料渲染到 section ========= */
-function renderSection(section, data) {
-  const host = section.querySelector(".content") || section;
-  $$(".__auto", host).forEach((el) => el.remove());
-
-  // README：Markdown 轉 HTML（若未載入 marked，退回純文字）
-  if ((section.dataset.key?.toLowerCase() === "readme") || (section.id.toLowerCase() === "readme")) {
-    const box = document.createElement("div");
-    box.className = "__auto";
-    if (typeof marked !== "undefined" && typeof marked.parse === "function") {
-      box.innerHTML = marked.parse(String(data));
+    if (url.endsWith(".json")) {
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) {
+          html = parsed.map(p => `<p>${escapeHTML(p)}</p>`).join("");
+        } else if (parsed && typeof parsed === "object") {
+          html = `<pre>${escapeHTML(JSON.stringify(parsed, null, 2))}</pre>`;
+        } else {
+          html = `<pre>${escapeHTML(String(parsed))}</pre>`;
+        }
+      } catch {
+        html = `<pre>${escapeHTML(text)}</pre>`;
+      }
+    } else if (url.endsWith(".md") || isLikelyMarkdown(text)) {
+      html = (window.marked && typeof marked.parse === "function")
+        ? marked.parse(text)
+        : `<pre>${escapeHTML(text)}</pre>`;
     } else {
-      const pre = document.createElement("pre");
-      pre.className = "__auto";
-      pre.textContent = String(data);
-      box.appendChild(pre);
+      html = `<pre>${escapeHTML(text)}</pre>`;
     }
-    host.appendChild(box);
-    return;
-  }
 
-  // 其他：支援 Array / Object / String
-  if (Array.isArray(data)) {
-    data.forEach((para) => {
-      const p = document.createElement("p");
-      p.className = "__auto";
-      p.textContent = String(para);
-      host.appendChild(p);
-    });
-  } else if (data && typeof data === "object") {
-    Object.entries(data).forEach(([k, v]) => {
-      const h3 = document.createElement("h3");
-      h3.className = "__auto";
-      h3.textContent = k;
-      host.appendChild(h3);
-
-      const p = document.createElement("p");
-      p.className = "__auto";
-      p.textContent = typeof v === "string" ? v : JSON.stringify(v, null, 2);
-      host.appendChild(p);
-    });
-  } else if (typeof data === "string") {
-    const p = document.createElement("p");
-    p.className = "__auto";
-    p.textContent = data;
-    host.appendChild(p);
-  } else {
-    const empty = document.createElement("div");
-    empty.className = "empty __auto";
-    empty.textContent = "（空）";
-    host.appendChild(empty);
+    sectionEl.innerHTML = html;
+    sectionEl.dataset.state = "loaded";
+  } catch (err) {
+    sectionEl.innerHTML = `<div class="error">載入失敗：${escapeHTML(err.message || String(err))}</div>`;
+    sectionEl.dataset.state = "error";
   }
 }
-
-/* ========= 依 hash 載入相對應 section ========= */
-function handleHashChange() {
-  const id = decodeURIComponent(location.hash.replace(/^#/, ""));
-  if (!id) return;
-
-  let sec = document.getElementById(id);
-  if (!sec) {
-    // 若找不到，動態建立一個空殼
-    sec = document.createElement("section");
-    sec.id = id;
-    const h2 = document.createElement("h2");
-    h2.textContent = id;
-    sec.appendChild(h2);
-    $("#content")?.appendChild(sec);
-  }
-
-  loadSectionData(sec);
-  sec.scrollIntoView({ behavior: "smooth", block: "start" });
+function setupAutoLoadAllSections() {
+  document.querySelectorAll("main#content > section").forEach(sec => loadSectionAuto(sec));
 }
 
-/* ========= README 彈窗：載入 & 顯示 ========= */
-async function setupReadmeModal() {
+// ---------- ScrollSpy ----------
+function setupScrollSpy() {
+  const links = document.querySelectorAll("#toc a[href^='#']");
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(a => a.classList.remove("active"));
+        const id = entry.target.getAttribute("id");
+        if (!id) return;
+        const sel = `#toc a[href="#${CSS.escape(id)}"]`;
+        const active = document.querySelector(sel);
+        if (active) active.classList.add("active");
+      }
+    });
+  }, { rootMargin: "-40% 0px -55% 0px" });
+
+  document.querySelectorAll("main#content > section").forEach(sec => observer.observe(sec));
+}
+
+// ---------- README（頁面 + 彈窗） ----------
+async function setupReadme() {
+  const inlineWrap = document.querySelector("#readme .content");
   const modal = document.getElementById("readme-modal");
-  if (!modal) return;
-  // 若用戶選擇不再顯示，就略過
-  if (localStorage.getItem("readme:dontShow") === "1") return;
-
-  const contentBox = document.getElementById("readme-modal-content");
+  const modalContent = document.getElementById("readme-modal-content");
   const okBtn = document.getElementById("readme-ok");
   const dontShow = document.getElementById("readme-dont-show");
 
-  // 載入 README.md
-  let text = "";
   try {
-    const res = await fetch("/README.md", { cache: "no-cache" });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    text = await res.text();
+    const { text } = await fetchFirst(["assets/README.md"]);
+    const html = (window.marked && typeof marked.parse === "function")
+      ? marked.parse(text)
+      : `<pre>${escapeHTML(text)}</pre>`;
+    if (inlineWrap) inlineWrap.innerHTML = html;
+    if (modalContent) modalContent.innerHTML = html;
   } catch (err) {
-    text = `README 載入失敗：${err.message}`;
+    const em = `<div class="error">README 載入失敗：${escapeHTML(err.message || String(err))}</div>`;
+    if (inlineWrap) inlineWrap.innerHTML = em;
+    if (modalContent) modalContent.innerHTML = em;
   }
 
-  // 渲染 Markdown
-  if (typeof marked !== "undefined" && typeof marked.parse === "function") {
-    contentBox.innerHTML = marked.parse(text);
-  } else {
-    const pre = document.createElement("pre");
-    pre.textContent = text;
-    contentBox.replaceChildren(pre);
+  const dont = localStorage.getItem("bcql_dontShowReadme") === "1";
+  if (!dont && modal) {
+    modal.hidden = false;      // 打開時取消 hidden
+    modal.classList.add("open");
   }
 
-  // 顯示 modal
-  openReadmeModal();
-
-  // 行為
-  function openReadmeModal() {
-    modal.hidden = false;
-    document.body.style.overflow = "hidden";
+  if (okBtn && modal) {
+    okBtn.addEventListener("click", () => {
+      if (dontShow && dontShow.checked) {
+        localStorage.setItem("bcql_dontShowReadme", "1");
+      }
+      modal.classList.remove("open");
+      modal.hidden = true;     // ✅ 關閉時真正隱藏（新增）
+    });
   }
-  function closeReadmeModal() {
-    modal.hidden = true;
-    document.body.style.overflow = "";
-    if (dontShow?.checked) localStorage.setItem("readme:dontShow", "1");
-  }
+}
 
-  okBtn?.addEventListener("click", closeReadmeModal);
-  modal.querySelector(".modal-backdrop")?.addEventListener("click", closeReadmeModal);
-  document.addEventListener("keydown", (e) => {
-    if (!modal.hidden && e.key === "Escape") closeReadmeModal();
+// ---------- 手機 TOC 點擊展開 ----------
+function setupMobileTocToggle() {
+  const toc = document.getElementById("toc");
+  if (!toc) return;
+  let bound = false;
+
+  function onClick(e) {
+    const a = e.target.closest("#toc li > a");
+    if (!a) return;
+    const li = a.parentElement;
+    if (!li.querySelector(":scope > ul")) return;
+    if (!window.matchMedia("(max-width: 980px)").matches) return;
+    e.preventDefault();
+
+    const parent = li.parentElement;
+    parent.querySelectorAll(":scope > li.open").forEach(x => {
+      if (x !== li) x.classList.remove("open");
+    });
+    li.classList.toggle("open");
+  }
+  function onDocClick(e) {
+    if (!window.matchMedia("(max-width: 980px)").matches) return;
+    if (!e.target.closest("#toc")) {
+      document.querySelectorAll("#toc li.open").forEach(li => li.classList.remove("open"));
+    }
+  }
+  function bind() {
+    if (bound) return;
+    toc.addEventListener("click", onClick);
+    document.addEventListener("click", onDocClick);
+    bound = true;
+  }
+  function unbind() {
+    if (!bound) return;
+    toc.removeEventListener("click", onClick);
+    document.removeEventListener("click", onDocClick);
+    bound = false;
+  }
+  function update() {
+    if (window.matchMedia("(max-width: 980px)").matches) bind();
+    else unbind();
+  }
+  update();
+  window.matchMedia("(max-width: 980px)").addEventListener("change", update);
+}
+
+// ---------- 首頁按鈕：平滑捲動 ----------
+function setupHomeButtonScroll() {
+  const homeBtn = document.querySelector('.site-header .home-btn[href="#homepage"]');
+  if (!homeBtn) return;
+  homeBtn.addEventListener("click", (e) => {
+    const target = document.getElementById("homepage");
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   });
 }
 
-/* ========= 啟動 ========= */
+// ---------- 啟動 ----------
 window.addEventListener("DOMContentLoaded", () => {
-  setupProductCrosswalk();
+  setupAutoLoadAllSections();
   setupScrollSpy();
-
-  // 若網址已有 #hash，載入對應章節
-  if (location.hash) {
-    handleHashChange();
-  }
-  // 如果你還是想主內容預設顯示 readme，可取消註解下一行：
-  // else { location.hash = "#readme"; }
-
-  // 額外：顯示 README 的「彈窗」版本
-  setupReadmeModal();
+  setupMobileTocToggle();
+  setupHomeButtonScroll();
+  setupReadme();
 });
-
-window.addEventListener("hashchange", handleHashChange);

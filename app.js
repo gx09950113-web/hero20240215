@@ -35,6 +35,10 @@ function isLikelyMarkdown(text) {
   return /(^|\n)#{1,6}\s|(^|\n)[-*+]\s|(^|\n)\d+\.\s/.test(text);
 }
 
+// ===== 世界氣候（頂部顯示全地圖）設定 =====
+const WORLD_CLIMATE_KEY = "world-climate";
+const WORLD_CLIMATE_IMAGE_SRC = "assets/images/0全地圖.jpg";
+
 // ---------- JSON 渲染（遞迴展開） ----------
 function renderJsonObjectAsList(obj) {
   const esc = (x) => escapeHTML(x);
@@ -105,6 +109,17 @@ async function loadSectionAuto(sectionEl) {
         : `<pre>${escapeHTML(text)}</pre>`;
     } else {
       html = `<pre>${escapeHTML(text)}</pre>`;
+    }
+
+    // ★★★ 世界氣候：在 JSON/Markdown 區塊「上方」插入全地圖 ★★★
+    if (key === WORLD_CLIMATE_KEY) {
+      const mapBlock = `
+        <div class="map-wrapper">
+          <h2 class="section-title">世界氣候</h2>
+          <img class="map-image" src="${WORLD_CLIMATE_IMAGE_SRC}" alt="世界全地圖">
+        </div>
+      `;
+      html = mapBlock + `<div class="json-section">${html}</div>`;
     }
 
     const contentEl = sectionEl.querySelector(".content") || sectionEl;

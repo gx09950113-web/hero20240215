@@ -487,8 +487,28 @@ footer {
   .section-title { font-size: 1.125rem; margin: 6px 0 10px; }
   .json-section { padding: 0 12px 12px; }
 }
-@media (max-width: 430px) {
-  .map-wrapper { padding: 8px 12px; margin-bottom: 12px; }
-  .section-title { font-size: 1.125rem; margin: 6px 0 10px; }
-  .json-section { padding: 0 12px 12px; }
+
+/* ======= 內容頂部宗門徽章（icon）樣式 ======= */
+.section-badge {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px 0 10px;
 }
+.section-badge img {
+  height: 44px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.12));
+}
+
+/* ======= 首頁主圖（qunyinglu.png） ======= */
+.homepage-hero {
+  display: block;
+  margin: 10px auto 0;
+  max-width: min(780px, 92%);
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.12);
+}
+

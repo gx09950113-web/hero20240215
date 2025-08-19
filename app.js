@@ -39,6 +39,30 @@ function isLikelyMarkdown(text) {
 const CLIMATE_KEY = "climate"; // ← 和你的 <a href="#climate"> 對齊
 const CLIMATE_IMAGE_SRC = "assets/images/0全地圖.jpg";
 
+// ===== 各宗門圖標設定（依據 section id 前綴/對應檔名判斷）=====
+const GROUP_ICON = {
+  royal: "assets/images/royal-icon.png",
+  qj:    "assets/images/qj-icon.png",
+  xl:    "assets/images/xl-icon.png",
+  yt:    "assets/images/yt-icon.png",
+  yl:    "assets/images/yl-icon.png",
+};
+
+// 依據 key 推斷所屬群組
+function inferGroupFromKey(key) {
+  // 皇城
+  if (key.startsWith("royal-") || key === "baichuan-law") return "royal";
+  // 千訣宗（含產物：執靈圖）
+  if (key.startsWith("qj-") || key === "zhilingtu") return "qj";
+  // 玄靈宗（含產物：灼草經）
+  if (key.startsWith("xl-") || key === "zhuocaoping" || key === "yang-vs-yin") return "xl";
+  // 衍天宗（含產物：符海錄）
+  if (key.startsWith("yt-") || key === "fuhailu") return "yt";
+  // 云嵐宗（含產物：百器書）
+  if (key.startsWith("yl-") || key === "baiqishu") return "yl";
+  return null;
+}
+
 // ---------- JSON 渲染（遞迴展開） ----------
 function renderJsonObjectAsList(obj) {
   const esc = (x) => escapeHTML(x);
@@ -55,11 +79,31 @@ function renderJsonObjectAsList(obj) {
       return `<ul class="kv-list">` + v.map(x => `<li>${renderValue(x)}</li>`).join("") + `</ul>`;
     }
 
+    // === 支援「說明 + 格式」：若物件含有 { 說明, 格式 }，依格式套樣式 ===
+    const fmt = v && typeof v === "object" && !Array.isArray(v)
+      ? (v["格式"] || v["format"] || null)
+      : null;
+
+    const color  = fmt && (fmt["文字顏色"] || fmt["顏色"] || fmt["color"]);
+    const weight = fmt && (fmt["字重"]     || fmt["fontWeight"] || fmt["字體粗細"]);
+
     let inner = `<ul class="kv-list">`;
     for (const [k, vv] of Object.entries(v)) {
-      inner += `<li><strong>${esc(k)}：</strong>${
-        isPrimitive(vv) ? esc(String(vv)) : renderValue(vv)
-      }</li>`;
+      if (k === "格式" || k === "format") continue; // 格式屬性只用來控制樣式，不顯示
+
+      let valueHtml;
+      if (k === "說明" && (color || weight)) {
+        const css = [
+          color  ? `color:${escapeHTML(String(color))}` : "",
+          weight ? `font-weight:${escapeHTML(String(weight))}` : ""
+        ].filter(Boolean).join(";");
+
+        valueHtml = `<span style="${css}">${esc(String(vv))}</span>`;
+      } else {
+        valueHtml = isPrimitive(vv) ? esc(String(vv)) : renderValue(vv);
+      }
+
+      inner += `<li><strong>${esc(k)}：</strong>${valueHtml}</li>`;
     }
     inner += `</ul>`;
     return inner;
@@ -111,16 +155,27 @@ async function loadSectionAuto(sectionEl) {
       html = `<pre>${escapeHTML(text)}</pre>`;
     }
 
-// ★★★ 世界氣候：在 JSON/Markdown 區塊「上方」插入全地圖 ★★★
-if (key === CLIMATE_KEY) {
-  const mapBlock = `
-    <div class="map-wrapper">
-      <h2 class="section-title">世界氣候</h2>
-      <img class="map-image" src="${CLIMATE_IMAGE_SRC}" alt="世界全地圖">
-    </div>
-  `;
-  html = mapBlock + `<div class="json-section">${html}</div>`;
-}
+    // ★★★ 世界氣候：在 JSON/Markdown 區塊「上方」插入全地圖 ★★★
+    if (key === CLIMATE_KEY) {
+      const mapBlock = `
+        <div class="map-wrapper">
+          <h2 class="section-title">世界氣候</h2>
+          <img class="map-image" src="${CLIMATE_IMAGE_SRC}" alt="世界全地圖">
+        </div>
+      `;
+      html = mapBlock + `<div class="json-section">${html}</div>`;
+    }
+
+    // ★★★ 宗門/皇城：在頂部插入對應 icon（依據 key 判斷）★★★
+    const group = inferGroupFromKey(key);
+    if (group && GROUP_ICON[group]) {
+      const iconBlock = `
+        <div class="section-badge">
+          <img src="${GROUP_ICON[group]}" alt="${group}-icon">
+        </div>
+      `;
+      html = iconBlock + html;
+    }
 
     const contentEl = sectionEl.querySelector(".content") || sectionEl;
     contentEl.innerHTML = html;

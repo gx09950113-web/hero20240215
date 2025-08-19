@@ -313,3 +313,17 @@ footer a:hover { color: var(--accent); }
   :root { --section-gap: 14px; }
   #content > section { padding: 14px; }
 }
+
+/* =========================================================
+   強制所有 UI 元素 100% 不透明
+   ========================================================= */
+button, .btn,
+input[type="button"], input[type="submit"], input[type="reset"],
+.modal-actions button,
+#toc a,
+#toc a:hover,
+#toc a.active,
+#toc li ul li a,
+#toc li ul li a:hover {
+  opacity: 1 !important;
+}

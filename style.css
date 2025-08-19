@@ -488,27 +488,59 @@ footer {
   .json-section { padding: 0 12px 12px; }
 }
 
-/* ======= 內容頂部宗門徽章（icon）樣式 ======= */
+/* ======= 內容頂部宗門徽章（icon）樣式：置中 + RWD ======= */
 .section-badge {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: 4px 0 10px;
-}
-.section-badge img {
-  height: 44px;
-  width: auto;
-  display: block;
-  filter: drop-shadow(0 6px 10px rgba(0,0,0,.12));
+  justify-content: center;     /* ✅ 置中 */
+  padding: 8px 0 16px;
 }
 
-/* ======= 首頁主圖（qunyinglu.png） ======= */
+.section-badge img {
+  display: block;
+  width: min(90vw, 1024px);    /* ✅ 手機自適應，桌機上限 1024 */
+  height: auto;                /* ✅ 保持比例 */
+  max-height: 70vh;            /* 防止超高螢幕時過大 */
+  filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
+  object-fit: contain;
+}
+
+/* ✅ FHD(≥1920px) 螢幕：確保至少 1024px 寬 */
+@media (min-width: 1920px) {
+  .section-badge img {
+    width: 1024px;
+    height: 1024px;            /* 若原圖非正方可改成 height:auto，但你說要 1024×1024 顯示 */
+    object-fit: contain;
+  }
+}
+
+/* ✅ 小螢幕（手機）優化 */
+@media (max-width: 480px) {
+  .section-badge img {
+    width: 88vw;               /* 更緊貼螢幕 */
+    height: auto;
+    max-height: 56vh;
+  }
+}
+
+/* ====== 首頁主視覺（歡迎詞下固定） ====== */
+#home-hero {
+  max-width: var(--content-max, 1200px);
+  margin: 0 auto var(--section-gap);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: clamp(12px, 2vw, 20px);
+}
+
 .homepage-hero {
   display: block;
-  margin: 10px auto 0;
-  max-width: min(780px, 92%);
+  margin: 0 auto;
+  width: min(780px, 92%);
   height: auto;
   border-radius: 12px;
   box-shadow: 0 10px 24px rgba(0,0,0,.12);
 }
+
 

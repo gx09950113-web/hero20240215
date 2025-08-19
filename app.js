@@ -301,10 +301,11 @@ function setupHomeButtonScroll() {
     if (!homepage) return;
     e.preventDefault();
 
-    // 1) 刪除 main#content 內除了 homepage 以外的所有 section
-    document.querySelectorAll("main#content > section").forEach(sec => {
-      if (sec !== homepage) sec.remove();
-    });
+// 1) 刪除 main#content 內除了 homepage 與 home-hero 以外的所有 section
+const hero = document.getElementById("home-hero");
+document.querySelectorAll("main#content > section").forEach(sec => {
+  if (sec !== homepage && sec !== hero) sec.remove();
+});
 
     // 2) 若存在 viewer，也移除（以確保畫面只剩首頁）
     const viewer = document.getElementById("viewer");
@@ -348,11 +349,13 @@ async function ensureSectionAndLoad(targetId) {
       <h2 id="viewer-title"></h2>
       <div class="content"><div class="loading">Loading…</div></div>
     `;
-    const main = document.querySelector("main#content") || document.querySelector("main");
-    const home = document.getElementById("homepage");
-    if (main) {
-      home ? main.insertBefore(viewer, home.nextSibling) : main.appendChild(viewer);
-    }
+const main = document.querySelector("main#content") || document.querySelector("main");
+const home = document.getElementById("homepage");
+const hero = document.getElementById("home-hero");
+if (main) {
+  const anchor = hero || home;
+  anchor ? main.insertBefore(viewer, anchor.nextSibling) : main.appendChild(viewer);
+}
   } else {
     if (!viewer.querySelector("#viewer-title")) {
       const h2 = document.createElement("h2");

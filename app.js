@@ -45,16 +45,13 @@ function renderJsonObjectAsList(obj) {
     if (isPrimitive(v)) return esc(String(v));
 
     if (Array.isArray(v)) {
-      // 陣列：若全是原始值 → <ul><li>值</li></ul>
       const allPrim = v.every(isPrimitive);
       if (allPrim) {
         return `<ul class="kv-list">` + v.map(x => `<li>${esc(String(x))}</li>`).join("") + `</ul>`;
       }
-      // 否則逐項遞迴
       return `<ul class="kv-list">` + v.map(x => `<li>${renderValue(x)}</li>`).join("") + `</ul>`;
     }
 
-    // 物件：輸出 key：value（value 可再遞迴）
     let inner = `<ul class="kv-list">`;
     for (const [k, vv] of Object.entries(v)) {
       inner += `<li><strong>${esc(k)}：</strong>${
@@ -65,7 +62,6 @@ function renderJsonObjectAsList(obj) {
     return inner;
   };
 
-  // 預設：最外層每個 key 包一塊卡片（.kv-group）
   let html = `<div class="prose">`;
   for (const [key, val] of Object.entries(obj)) {
     html += `<div class="kv-group"><h3>${esc(key)}</h3>${renderValue(val)}</div>`;
@@ -112,7 +108,6 @@ async function loadSectionAuto(sectionEl) {
       html = `<pre>${escapeHTML(text)}</pre>`;
     }
 
-    // ✅ 只更新內容容器，不破壞 #viewer-title
     const contentEl = sectionEl.querySelector(".content") || sectionEl;
     contentEl.innerHTML = html;
 
@@ -227,16 +222,31 @@ function setupMobileTocToggle() {
   window.matchMedia("(max-width: 980px)").addEventListener("change", update);
 }
 
-// ---------- 首頁按鈕：平滑捲動 ----------
+// ---------- 首頁按鈕：清空其他 section，只留 homepage ----------
 function setupHomeButtonScroll() {
   const homeBtn = document.querySelector('.site-header .home-btn[href="#homepage"]');
   if (!homeBtn) return;
+
   homeBtn.addEventListener("click", (e) => {
-    const target = document.getElementById("homepage");
-    if (target) {
-      e.preventDefault();
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    const homepage = document.getElementById("homepage");
+    if (!homepage) return;
+    e.preventDefault();
+
+    // 1) 刪除 main#content 內除了 homepage 以外的所有 section
+    document.querySelectorAll("main#content > section").forEach(sec => {
+      if (sec !== homepage) sec.remove();
+    });
+
+    // 2) 若存在 viewer，也移除（以確保畫面只剩首頁）
+    const viewer = document.getElementById("viewer");
+    if (viewer) viewer.remove();
+
+    // 3) 捲動到首頁、同步 URL hash
+    homepage.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (location.hash !== "#homepage") history.pushState(null, "", "#homepage");
+
+    // 4) TOC 高亮重置
+    document.querySelectorAll("#toc a").forEach(a => a.classList.remove("active"));
   });
 }
 
@@ -275,7 +285,6 @@ async function ensureSectionAndLoad(targetId) {
       home ? main.insertBefore(viewer, home.nextSibling) : main.appendChild(viewer);
     }
   } else {
-    // 防呆：若之前被蓋掉，補齊結構
     if (!viewer.querySelector("#viewer-title")) {
       const h2 = document.createElement("h2");
       h2.id = "viewer-title";

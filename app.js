@@ -38,7 +38,6 @@ function isLikelyMarkdown(text) {
 // ---------- JSON 渲染（遞迴展開） ----------
 function renderJsonObjectAsList(obj) {
   const esc = (x) => escapeHTML(x);
-
   const isPrimitive = (v) => v === null || typeof v !== "object";
 
   const renderValue = (v) => {
@@ -327,6 +326,30 @@ function setupTocNav() {
   });
 }
 
+// —— 主題切換 —— //
+function setupThemeToggle() {
+  const btn = document.getElementById("theme-toggle");
+  if (!btn) return;
+
+  function currentTheme() {
+    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  }
+  function setTheme(mode) {
+    document.documentElement.setAttribute("data-theme", mode);
+    localStorage.setItem("theme", mode);
+    btn.textContent = mode === "dark" ? "☀️" : "🌙";
+    btn.setAttribute("aria-label", mode === "dark" ? "切換為亮色模式" : "切換為暗色模式");
+    btn.setAttribute("title", mode === "dark" ? "切換為亮色模式" : "切換為暗色模式");
+  }
+
+  // 初始化圖示
+  setTheme(currentTheme());
+
+  btn.addEventListener("click", () => {
+    setTheme(currentTheme() === "dark" ? "light" : "dark");
+  });
+}
+
 // —— 處理初始與後續 hash 變更 —— //
 function setupHashRouting() {
   window.addEventListener("DOMContentLoaded", () => {
@@ -350,5 +373,6 @@ window.addEventListener("DOMContentLoaded", () => {
   setupHomeButtonScroll();
   setupReadme();
   setupTocNav();
+  setupThemeToggle();  // ✅ 新增
   setupHashRouting();
 });

@@ -6,16 +6,31 @@
   <title>百川群英錄｜索引</title>
   <link rel="stylesheet" href="style.css" />
   <script src="assets/libs/marked.js"></script>
+
+  <!-- ✅ 主題提前初始化：若有手動選擇，優先用 data-theme；否則跟隨系統 -->
+  <script>
+    (function () {
+      const saved = localStorage.getItem("theme");
+      if (saved === "light" || saved === "dark") {
+        document.documentElement.setAttribute("data-theme", saved);
+      } else {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+      }
+    })();
+  </script>
+
   <script defer src="app.js"></script>
 </head>
 <body>
 
-  <!-- 🔰首頁按鈕（桌機左上／手機右上，之後在 style.css 補樣式） -->
+  <!-- 🔰首頁按鈕 + 主題切換 -->
   <header class="site-header">
-  <a href="#homepage" class="home-btn" aria-label="回到首頁">
-    <img src="assets/images/百川商標.png" alt="百川商標" class="logo">
-    <span>百川群英錄</span>
-  </a>
+    <a href="#homepage" class="home-btn" aria-label="回到首頁">
+      <img src="assets/images/百川商標.png" alt="百川商標" class="logo">
+      <span>百川群英錄</span>
+    </a>
+    <button id="theme-toggle" aria-label="切換亮/暗模式" title="切換亮/暗模式">🌙</button>
   </header>
 
   <!-- ⛳ 置頂導覽列（原本的 TOC，內容不動） -->
@@ -116,7 +131,7 @@
 
   <!-- 主內容 -->
   <main id="content">
-    <!-- 🏠 首頁固定內容（新增） -->
+    <!-- 🏠 首頁固定內容 -->
     <section id="homepage">
       <h2>歡迎</h2>
       <p>歡迎來到百川群英錄超級簡單入門網站！</p>
@@ -124,9 +139,9 @@
       <p>具體玩法請根據下方連結前往官方網站或官方Discord！<br>
       裡面會有專人跟許多前輩玩家替您解惑！</p>
     </section>
-  </main> <!-- ✅ 補上 main 關閉標籤 -->
+  </main>
 
-  <!-- README 彈窗（保持原結構） -->
+  <!-- README 彈窗 -->
   <div id="readme-modal" class="modal" hidden>
     <div class="modal-backdrop"></div>
     <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="readme-title">

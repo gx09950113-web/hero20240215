@@ -1,11 +1,12 @@
 /* =========================================
-   百川群英錄 | style.css (Final Packed)
+   百川群英錄 | style.css (Final Packed v2)
    - 自訂字型 KurewaGothicCjkTc
    - 亮/暗色模式
-   - 卡片/按鈕樣式 (100% 不透明)
-   - 橫向 TOC + 宗門子分頁飛出
+   - 卡片圓角、陰影
+   - 橫向 TOC + 宗門子分頁 → 飛出
    - ScrollSpy 高亮
    - README 彈窗
+   - 全站 UI 100% 不透明（含強化覆蓋）
    ========================================= */
 
 /* 自訂字型 ---------------------------------------------- */
@@ -53,8 +54,8 @@
     --accent: #a78bfa;
     --accent-contrast: #0b0f16;
     --toc-bg: #0f1522;
-    --shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
-    --ring: rgba(167, 139, 250, 0.35);
+    --shadow: 0 16px 36px rgba(0,0,0,.45);
+    --ring: rgba(167,139,250,.35);
   }
 }
 
@@ -111,9 +112,6 @@ a:hover { text-decoration: underline; }
   transition: background-color .2s;
   color: inherit;
 }
-#toc > nav > ul > li > a:hover {
-  background: rgba(124,58,237,0.1);
-}
 
 /* 子選單（第二層下拉） */
 #toc li ul {
@@ -131,19 +129,18 @@ a:hover { text-decoration: underline; }
 }
 #toc li:hover > ul { display: block; }
 
+#toc li ul li { margin: 0; padding: 0; position: relative; }
 #toc li ul li a {
   display: block;
   padding: 8px 12px;
+  color: inherit;
+  text-decoration: none;
   white-space: nowrap;
   border-radius: 6px;
   transition: background-color .15s ease;
 }
-#toc li ul li a:hover {
-  background: rgba(124,58,237,0.1);
-}
 
 /* 第三層（宗門 → 子分頁：橫向飛出） */
-#toc li ul li { position: relative; }
 #toc li ul li > ul {
   position: absolute;
   top: 0;
@@ -233,7 +230,7 @@ a:hover { text-decoration: underline; }
   border: 1px dashed var(--border);
 }
 
-/* 按鈕（100% 不透明） ------------------------------------ */
+/* 按鈕（預設 100% 不透明） ------------------------------- */
 button, .btn, input[type="button"], input[type="submit"],
 .modal-actions button {
   appearance: none;
@@ -244,7 +241,6 @@ button, .btn, input[type="button"], input[type="submit"],
   border-radius: 999px;
   font-weight: 600;
   letter-spacing: .2px;
-  opacity: 1 !important;
   cursor: pointer;
   transition: box-shadow .15s ease, transform .04s ease;
 }
@@ -273,7 +269,7 @@ footer a:hover { color: var(--accent); }
 .modal { z-index: 1000; }
 .modal-backdrop {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,.45);
+  background: rgba(0,0,0,.45);          /* 遮罩刻意保留透明感，營造景深 */
   backdrop-filter: blur(3px);
   z-index: 1001;
   opacity: 0; animation: modalFade .25s ease forwards;
@@ -298,7 +294,7 @@ footer a:hover { color: var(--accent); }
 .modal-checkbox { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
 .modal-checkbox input[type="checkbox"] { accent-color: var(--accent); transform: scale(1.1); }
 @keyframes modalFade { to { opacity: 1; } }
-@keyframes modalPop { to { opacity: 1; transform: translate(-50%, -50%); } }
+@keyframes modalPop  { to { opacity: 1; transform: translate(-50%, -50%); } }
 
 /* 手機優化 --------------------------------------------- */
 @media (max-width: 980px) {
@@ -315,15 +311,35 @@ footer a:hover { color: var(--accent); }
 }
 
 /* =========================================================
-   強制所有 UI 元素 100% 不透明
+   全站 100% 不透明（實心）強化覆蓋  —— 放在最底不要再改動
+   目的：把所有仍用 rgba(...,0.x) 或 opacity 的地方蓋成實心
    ========================================================= */
+
+/* 1) 所有按鈕實心 */
 button, .btn,
 input[type="button"], input[type="submit"], input[type="reset"],
-.modal-actions button,
-#toc a,
-#toc a:hover,
-#toc a.active,
-#toc li ul li a,
-#toc li ul li a:hover {
+.modal-actions button {
   opacity: 1 !important;
+  background: var(--accent) !important;
+  color: var(--accent-contrast) !important;
+  border-color: var(--border) !important;
 }
+
+/* 2) TOC 頂層連結：預設、hover 皆用實心膠囊 */
+#toc > nav > ul > li > a,
+#toc > nav > ul > li > a:hover {
+  background: var(--accent) !important;
+  color: var(--accent-contrast) !important;
+  text-decoration: none !important;
+}
+
+/* 3) TOC 子選單 hover / ScrollSpy active 也用實心 */
+#toc li ul li a:hover,
+#toc a.active {
+  background: var(--accent) !important;
+  color: var(--accent-contrast) !important;
+  box-shadow: 0 0 0 2px var(--ring) !important;
+}
+
+/* 4) 保底：避免祖先元素殘留 opacity 影響 */
+#toc, #toc * { opacity: 1 !important; }

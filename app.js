@@ -1,30 +1,34 @@
 // =========================================
-// 百川群英錄 | app.js（配合 index.html 現況版）
-// - 自動掃描 <main> > section 依 ID 載入 /data/ 同名檔
-// - 支援 .json → .md → .txt 順序嘗試
-// - prod-* 會映射為去掉前綴後的同名檔
-// - README：同時渲染頁面內 #readme 與彈窗，來源 assets/README.md
-// - ScrollSpy / 手機 TOC 維持
-// - 禁止點背景就關閉 README（只允許按鈕）
+// 百川群英錄 | app.js（自動配合 index 版）
+// - 自動掃描 <main>#content > section 的 id 來載入 /data/{id}.json|.md|.txt
+// - prod-* 會去掉前綴後再找同名檔
+// - #homepage 固定文案；#readme 只用來顯示 README（不覆蓋）
+// - README 來源：assets/README.md（同時渲染頁內與彈窗）；僅按鈕關閉；支援「下次不要再出現」
+// - ScrollSpy / 手機 TOC；首頁按鈕平滑捲動
 // =========================================
 
-// ---- 小工具 --------------------------------
+// ---------- 小工具 ----------
 async function fetchFirst(paths) {
   for (const url of paths) {
     try {
       const res = await fetch(url);
-      if (res.ok) return await res.text();
+      if (res.ok) {
+        const text = await res.text();
+        return { text, url };
+      }
     } catch (_) {}
   }
   throw new Error("No available source: " + paths.join(", "));
 }
 
 function escapeHTML(s) {
-  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
 }
 
 function idToDataKey(id) {
-  // prod-xxx -> xxx；其他照原 ID
+  // prod-xxx -> xxx；其他維持原樣
   return id.startsWith("prod-") ? id.slice(5) : id;
 }
 
@@ -33,35 +37,45 @@ function buildCandidatePaths(key) {
   return [`data/${key}.json`, `data/${key}.md`, `data/${key}.txt`];
 }
 
-// ---- 動態載入 --------------------------------
+function isLikelyMarkdown(text) {
+  // 粗略判斷：有標題/清單符號等
+  return /(^|\n)#{1,6}\s|(^|\n)[-\*+]\s|(^|\n)\d+\.\s/.test(text);
+}
+
+// ---------- 內容載入 ----------
 async function loadSectionAuto(sectionEl) {
   const id = sectionEl.getAttribute("id");
   if (!id) return;
+
+  // 跳過固定/特例
+  if (id === "homepage") return; // 固定文案，不覆蓋
+  // #readme 內容由 setupReadme() 處理
+  if (id === "readme") return;
 
   const key = idToDataKey(id);
   const candidates = buildCandidatePaths(key);
 
   sectionEl.dataset.state = "loading";
-  try {
-    const text = await fetchFirst(candidates);
 
-    let html;
-    if (candidates[0].endsWith(".json") && text.trim().startsWith("[") || text.trim().startsWith("{")) {
-      // 嘗試以 JSON 解析（支援陣列或物件）
+  try {
+    const { text, url } = await fetchFirst(candidates);
+    let html = "";
+
+    if (url.endsWith(".json")) {
       try {
         const parsed = JSON.parse(text);
         if (Array.isArray(parsed)) {
-          html = parsed.map(p => `<p>${escapeHTML(String(p))}</p>`).join("");
-        } else {
-          // 物件就直接漂亮轉 pre
+          html = parsed.map(p => `<p>${escapeHTML(p)}</p>`).join("");
+        } else if (parsed && typeof parsed === "object") {
           html = `<pre>${escapeHTML(JSON.stringify(parsed, null, 2))}</pre>`;
+        } else {
+          html = `<pre>${escapeHTML(String(parsed))}</pre>`;
         }
-      } catch {
-        // 解析失敗就當作純文字
+      } catch (e) {
+        // 解析失敗就當純文字
         html = `<pre>${escapeHTML(text)}</pre>`;
       }
-    } else if (text.includes("# ") || text.includes("## ") || text.includes("\n- ")) {
-      // 粗略判斷 markdown，若有 marked 就轉
+    } else if (url.endsWith(".md") || isLikelyMarkdown(text)) {
       html = (window.marked && typeof marked.parse === "function")
         ? marked.parse(text)
         : `<pre>${escapeHTML(text)}</pre>`;
@@ -78,17 +92,11 @@ async function loadSectionAuto(sectionEl) {
 }
 
 function setupAutoLoadAllSections() {
-  const sections = document.querySelectorAll("main > section"); // 直接用你 index 的所有區塊
-  sections.forEach(sec => {
-    // 若 section 內沒東西或看起來是占位，就幫忙載
-    const isEmpty = sec.innerHTML.trim() === "" || /<div[^>]*class=["'][^"']*loading/i.test(sec.innerHTML);
-    if (isEmpty || sec.id === "readme") {
-      loadSectionAuto(sec);
-    }
-  });
+  const sections = document.querySelectorAll("main#content > section");
+  sections.forEach(sec => loadSectionAuto(sec));
 }
 
-// ---- ScrollSpy --------------------------------
+// ---------- ScrollSpy ----------
 function setupScrollSpy() {
   const links = document.querySelectorAll("#toc a[href^='#']");
   const observer = new IntersectionObserver(entries => {
@@ -96,23 +104,18 @@ function setupScrollSpy() {
       if (entry.isIntersecting) {
         links.forEach(a => a.classList.remove("active"));
         const id = entry.target.getAttribute("id");
-        const active = document.querySelector(`#toc a[href="#${CSS.escape(id)}"]`);
+        if (!id) return;
+        const sel = `#toc a[href="#${CSS.escape(id)}"]`;
+        const active = document.querySelector(sel);
         if (active) active.classList.add("active");
       }
     });
   }, { rootMargin: "-40% 0px -55% 0px" });
 
-  document.querySelectorAll("main > section").forEach(sec => observer.observe(sec));
+  document.querySelectorAll("main#content > section").forEach(sec => observer.observe(sec));
 }
 
-// ---- README（頁面 + 彈窗） --------------------
-// 你的 index 裡：#readme（頁面區塊）、#readme-modal / #readme-modal-content / #readme-ok（彈窗）
-// 並且有 backdrop，但無 .modal-close 與 data-modal 觸發器。 參見 index 結構。
-// 我們做法：
-// 1) 載入 assets/README.md
-// 2) 渲染到 #readme .content 與 #readme-modal-content
-// 3) 第一次進站如果沒有「dontShowReadme」就自動打開彈窗
-// 4) 只允許按「我知道了」關閉；不在背景點擊時關閉
+// ---------- README（頁面 + 彈窗） ----------
 async function setupReadme() {
   const inlineWrap = document.querySelector("#readme .content");
   const modal = document.getElementById("readme-modal");
@@ -120,12 +123,12 @@ async function setupReadme() {
   const okBtn = document.getElementById("readme-ok");
   const dontShow = document.getElementById("readme-dont-show");
 
-  // 載入 README
+  // 讀取 README 文字
   try {
-    const raw = await fetchFirst(["assets/README.md"]); // 修正正確路徑
+    const { text } = await fetchFirst(["assets/README.md"]);
     const html = (window.marked && typeof marked.parse === "function")
-      ? marked.parse(raw)
-      : `<pre>${escapeHTML(raw)}</pre>`;
+      ? marked.parse(text)
+      : `<pre>${escapeHTML(text)}</pre>`;
 
     if (inlineWrap) inlineWrap.innerHTML = html;
     if (modalContent) modalContent.innerHTML = html;
@@ -135,26 +138,27 @@ async function setupReadme() {
     if (modalContent) modalContent.innerHTML = em;
   }
 
-  // 自動開啟（僅第一次）
+  // 第一次自動開啟（localStorage 旗標）
   const dont = localStorage.getItem("bcql_dontShowReadme") === "1";
   if (!dont && modal) {
-    modal.hidden = false;                // 你的 index 初始是 hidden
+    // 你的 index 初始是 hidden；開啟時去掉 hidden 並加 open class（若有）
+    modal.hidden = false;
     modal.classList.add("open");
   }
 
-  // 僅允許按鈕關閉（不掛背景點擊）
+  // 僅按鈕關閉，不綁背景關閉（依你的需求）
   if (okBtn && modal) {
     okBtn.addEventListener("click", () => {
       if (dontShow && dontShow.checked) {
         localStorage.setItem("bcql_dontShowReadme", "1");
       }
       modal.classList.remove("open");
-      // 可選：關閉後維持 display，不再切回 hidden，避免動畫跳動
+      // 可選：modal.hidden = true;（若你希望完全隱藏）
     });
   }
 }
 
-// ---- TOC（手機點擊展開/收合） -----------------
+// ---------- 手機 TOC 點擊展開 ----------
 function setupMobileTocToggle() {
   const toc = document.getElementById("toc");
   if (!toc) return;
@@ -203,10 +207,25 @@ function setupMobileTocToggle() {
   window.matchMedia("(max-width: 980px)").addEventListener("change", update);
 }
 
-// ---- 啟動 ------------------------------------
+// ---------- 首頁按鈕：平滑捲動 ----------
+function setupHomeButtonScroll() {
+  const homeBtn = document.querySelector('.site-header .home-btn[href="#homepage"]');
+  if (!homeBtn) return;
+
+  homeBtn.addEventListener("click", (e) => {
+    const target = document.getElementById("homepage");
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
+}
+
+// ---------- 啟動 ----------
 window.addEventListener("DOMContentLoaded", () => {
-  setupAutoLoadAllSections();  // 依你的 index sections 自動載入
+  setupAutoLoadAllSections(); // 自動載入（依 id → /data/{id}.*）
   setupScrollSpy();
   setupMobileTocToggle();
-  setupReadme();               // README（頁面 + 彈窗）
+  setupHomeButtonScroll();
+  setupReadme();             // README（頁面 + 彈窗）
 });

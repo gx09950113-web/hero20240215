@@ -76,6 +76,9 @@ body {
   grid-template-rows: auto 1fr;
   gap: var(--space-4);
   padding: var(--space-4);
+
+  /* 🏠 推下內容，避免被固定首頁按鈕蓋住 */
+  padding-top: calc(var(--space-5) + 28px);
 }
 
 /* 連結 --------------------------------------------------- */
@@ -232,7 +235,7 @@ footer {
 
 /* 響應式：手機優化 ---------------------------------------- */
 @media (max-width: 980px) {
-  body { grid-template-rows: auto 1fr; padding: var(--space-3); }
+  body { grid-template-rows: auto 1fr; padding: var(--space-3); padding-top: calc(var(--space-5) + 24px); }
   #toc nav ul { flex-direction: column; gap: 4px; }
   #toc li ul {
     position: static;
@@ -247,5 +250,42 @@ footer {
     transform: none;
     pointer-events: auto;
     padding-left: 16px;
+  }
+}
+
+/* ===================== */
+/* 🔰 首頁按鈕樣式       */
+/* ===================== */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  z-index: 1200;
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  justify-content: flex-start; /* 桌機版靠左 */
+  align-items: center;
+  box-shadow: var(--shadow);
+}
+
+.site-header .home-btn {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--fg);
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.1s ease;
+}
+.site-header .home-btn:hover {
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+/* 手機版靠右 */
+@media (max-width: 768px) {
+  .site-header {
+    justify-content: flex-end;
   }
 }

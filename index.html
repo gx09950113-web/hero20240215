@@ -9,7 +9,13 @@
   <script defer src="app.js"></script>
 </head>
 <body>
-  <!-- ⛳ 置頂導覽列 -->
+
+  <!-- 🔰首頁按鈕（桌機左上／手機右上，之後在 style.css 補樣式） -->
+  <header class="site-header">
+    <a href="#homepage" class="home-btn" aria-label="回到首頁">百川群英錄</a>
+  </header>
+
+  <!-- ⛳ 置頂導覽列（原本的 TOC，內容不動） -->
   <header id="toc" role="navigation" aria-label="主導覽">
     <nav>
       <ul>
@@ -105,14 +111,24 @@
     </nav>
   </header>
 
-  <!-- 主內容：你也可保留 readme 區塊（若不想重複顯示，可移除） -->
+  <!-- 主內容 -->
   <main id="content">
+    <!-- 🏠 首頁固定內容（新增） -->
+    <section id="homepage">
+      <h2>歡迎</h2>
+      <p>歡迎來到百川群英錄超級簡單入門網站！</p>
+      <p>本網站旨在於讓未接觸過群英錄的大家能快速知道整個世界的架構。</p>
+      <p>具體玩法請根據下方連結前往官方網站或官方Discord！<br>
+      裡面會有專人跟許多前輩玩家替您解惑！</p>
+    </section>
+
+    <!-- README 可視需要保留（頁面內展示） -->
     <section id="readme">
       <h2>README</h2>
       <div class="content"></div>
     </section>
 
-    <!-- 範例章節（可依需要增刪） -->
+    <!-- 範例章節（保持原有結構） -->
     <section id="basic-principles"></section>
     <section id="world-history"></section>
     <section id="divine-orb"></section>
@@ -160,8 +176,7 @@
     <section id="prod-lingcaojing"></section>
   </main>
 
-
-  <!-- README 彈窗 -->
+  <!-- README 彈窗（保持原結構） -->
   <div id="readme-modal" class="modal" hidden>
     <div class="modal-backdrop"></div>
     <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="readme-title">
@@ -178,7 +193,6 @@
   </div>
 
   <footer>
-
     <p>© 2024 百川群英錄 • 保留一切權利</p>
     <div>
       <a href="https://sites.google.com/view/hero20240215/%E9%A6%96%E9%A0%81" target="_blank">官方網站</a> |

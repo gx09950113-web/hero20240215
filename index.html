@@ -6,13 +6,14 @@
   <title>百川群英錄｜索引</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- 先載 Markdown 解析器，再載你的主程式 -->
+  <!-- 離線 Markdown 解析器（請確保檔案存在） -->
   <script src="assets/libs/marked.js"></script>
+  <!-- 你的主程式 -->
   <script type="module" src="app.js"></script>
 </head>
 <body>
 
-  <!-- ⛳ 置頂導覽列（由原本 aside#toc 改為 header#toc） -->
+  <!-- ⛳ 置頂導覽列 -->
   <header id="toc" role="navigation" aria-label="主導覽">
     <nav>
       <ul>
@@ -25,6 +26,7 @@
             <li><a href="#yin-yang">陰陽</a></li>
           </ul>
         </li>
+
         <li>
           <a href="javascript:void(0)">修仙基本知識</a>
           <ul>
@@ -37,6 +39,7 @@
             <li><a href="#demon-cultivation">妖修</a></li>
           </ul>
         </li>
+
         <li>
           <a href="javascript:void(0)">世界地理</a>
           <ul>
@@ -89,10 +92,12 @@
         <li>
           <a href="javascript:void(0)">世界產物</a>
           <ul>
+            <!-- 這四個會被 JS 映射到各宗門同名文件 -->
             <li><a href="#prod-zhilingtu">執靈圖</a></li>
             <li><a href="#prod-zhuocaoping">灼草經</a></li>
             <li><a href="#prod-fuhailu">符海錄</a></li>
             <li><a href="#prod-baiqishu">百器書</a></li>
+
             <li><a href="#prod-menu">菜譜</a></li>
             <li><a href="#prod-wanxiezong">萬邪塚</a></li>
             <li><a href="#prod-fanshanxi">凡山戲</a></li>
@@ -104,13 +109,14 @@
     </nav>
   </header>
 
-  <!-- 內容區：README 在最前面 -->
+  <!-- 主內容：你也可保留 readme 區塊（若不想重複顯示，可移除） -->
   <main id="content">
     <section id="readme">
       <h2>README</h2>
       <div class="content"></div>
     </section>
 
+    <!-- 範例章節（可依需要增刪） -->
     <section id="basic-principles"></section>
     <section id="world-history"></section>
     <section id="divine-orb"></section>
@@ -125,11 +131,6 @@
     <section id="demon-cultivation"></section>
 
     <section id="climate"></section>
-
-    <section id="imperial-customs"></section>
-    <section id="tax"></section>
-    <section id="law"></section>
-
     <section id="qj-history"></section>
     <section id="qj-culture"></section>
     <section id="qj-structure"></section>
@@ -163,7 +164,7 @@
     <section id="prod-lingcaojing"></section>
   </main>
 
-  <!-- README 初始彈窗（保留原結構） -->
+  <!-- README 彈窗 -->
   <div id="readme-modal" class="modal" hidden>
     <div class="modal-backdrop"></div>
     <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="readme-title">

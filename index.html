@@ -5,180 +5,80 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>百川群英錄｜索引</title>
   <link rel="stylesheet" href="style.css" />
-
-  <!-- 離線 Markdown 解析器（請確保檔案存在） -->
   <script src="assets/libs/marked.js"></script>
-  <!-- 你的主程式 -->
-  <script type="module" src="app.js"></script>
+  <script defer src="app.js"></script>
 </head>
 <body>
-
-  <!-- ⛳ 置頂導覽列 -->
-  <header id="toc" role="navigation" aria-label="主導覽">
+  <!-- 🗂️目次 -->
+  <aside id="toc">
     <nav>
       <ul>
         <li>
-          <a href="javascript:void(0)">基礎世界觀</a>
+          <a href="#">世界地理</a>
           <ul>
-            <li><a href="#basic-principles">基本原則</a></li>
-            <li><a href="#world-history">世界歷史</a></li>
-            <li><a href="#divine-orb">御神珠</a></li>
-            <li><a href="#yin-yang">陰陽</a></li>
-          </ul>
-        </li>
-
-        <li>
-          <a href="javascript:void(0)">修仙基本知識</a>
-          <ul>
-            <li><a href="#qi">靈氣</a></li>
-            <li><a href="#root">靈根</a></li>
-            <li><a href="#power">靈力</a></li>
-            <li><a href="#benefits">益處</a></li>
-            <li><a href="#human-cultivation">人修</a></li>
-            <li><a href="#beast-cultivation">獸修</a></li>
-            <li><a href="#demon-cultivation">妖修</a></li>
-          </ul>
-        </li>
-
-        <li>
-          <a href="javascript:void(0)">世界地理</a>
-          <ul>
-            <li><a href="#climate">世界氣候</a></li>
-
+            <li><a href="#world-climate">世界氣候</a></li>
             <li>
-              <a href="javascript:void(0)">千訣宗</a>
+              <a href="#">千訣宗</a>
               <ul>
-                <li><a href="#qj-history">千訣歷史</a></li>
-                <li><a href="#qj-culture">千訣宗門風氣</a></li>
-                <li><a href="#qj-structure">千訣組織</a></li>
-                <li><a href="#zhilingtu">執靈圖</a></li>
+                <li><a href="#qianjue-history">千訣歷史</a></li>
               </ul>
             </li>
-
             <li>
-              <a href="javascript:void(0)">玄靈宗</a>
+              <a href="#">玄靈宗</a>
               <ul>
-                <li><a href="#xl-history">玄靈歷史</a></li>
-                <li><a href="#yang-vs-yin">玄陽vs玄陰</a></li>
-                <li><a href="#xl-structure">玄靈組織</a></li>
-                <li><a href="#zhuocaoping">灼草經</a></li>
+                <li><a href="#xuanling-history">玄靈歷史</a></li>
               </ul>
             </li>
-
             <li>
-              <a href="javascript:void(0)">衍天宗</a>
+              <a href="#">衍天宗</a>
               <ul>
-                <li><a href="#yt-history">衍天歷史</a></li>
-                <li><a href="#yt-culture">衍天風氣</a></li>
-                <li><a href="#yt-structure">衍天組織</a></li>
-                <li><a href="#fuhailu">符海錄</a></li>
+                <li><a href="#yantian-history">衍天歷史</a></li>
               </ul>
             </li>
-
             <li>
-              <a href="javascript:void(0)">云嵐宗</a>
+              <a href="#">云嵐宗</a>
               <ul>
-                <li><a href="#yl-history">云嵐歷史</a></li>
-                <li><a href="#yl-culture">云嵐風氣</a></li>
-                <li><a href="#yl-structure">云嵐組織</a></li>
-                <li><a href="#baiqishu">百器書</a></li>
+                <li><a href="#yunlan-history">云嵐歷史</a></li>
               </ul>
             </li>
-
             <li><a href="#yuqing">御清宗</a></li>
           </ul>
         </li>
-
         <li>
-          <a href="javascript:void(0)">世界產物</a>
+          <a href="#">世界產物</a>
           <ul>
-            <!-- 這四個會被 JS 映射到各宗門同名文件 -->
-            <li><a href="#prod-zhilingtu">執靈圖</a></li>
-            <li><a href="#prod-zhuocaoping">灼草經</a></li>
-            <li><a href="#prod-fuhailu">符海錄</a></li>
-            <li><a href="#prod-baiqishu">百器書</a></li>
-
-            <li><a href="#prod-menu">菜譜</a></li>
-            <li><a href="#prod-wanxiezong">萬邪塚</a></li>
-            <li><a href="#prod-fanshanxi">凡山戲</a></li>
-            <li><a href="#prod-jinyuyan">金玉言</a></li>
-            <li><a href="#prod-lingcaojing">靈草經</a></li>
+            <li><a href="#plants">藥藥纏繞</a></li>
+            <li><a href="#talismans">符籙纏繞</a></li>
+            <li><a href="#weapons">百器書</a></li>
           </ul>
         </li>
+        <li><a href="#readme" data-modal="readme">README</a></li>
       </ul>
     </nav>
-  </header>
+  </aside>
 
-  <!-- 主內容：你也可保留 readme 區塊（若不想重複顯示，可移除） -->
+  <!-- 📑內容 -->
   <main id="content">
-    <section id="readme">
-      <h2>README</h2>
-      <div class="content"></div>
-    </section>
+    <section id="world-climate"><h2>世界氣候</h2><div class="loading">Loading…</div></section>
+    <section id="qianjue-history"><h2>千訣歷史</h2><div class="loading">Loading…</div></section>
+    <section id="xuanling-history"><h2>玄靈歷史</h2><div class="loading">Loading…</div></section>
+    <section id="yantian-history"><h2>衍天歷史</h2><div class="loading">Loading…</div></section>
+    <section id="yunlan-history"><h2>云嵐歷史</h2><div class="loading">Loading…</div></section>
+    <section id="yuqing"><h2>御清宗</h2><div class="loading">Loading…</div></section>
 
-    <!-- 範例章節（可依需要增刪） -->
-    <section id="basic-principles"></section>
-    <section id="world-history"></section>
-    <section id="divine-orb"></section>
-    <section id="yin-yang"></section>
-
-    <section id="qi"></section>
-    <section id="root"></section>
-    <section id="power"></section>
-    <section id="benefits"></section>
-    <section id="human-cultivation"></section>
-    <section id="beast-cultivation"></section>
-    <section id="demon-cultivation"></section>
-
-    <section id="climate"></section>
-    <section id="qj-history"></section>
-    <section id="qj-culture"></section>
-    <section id="qj-structure"></section>
-    <section id="zhilingtu"></section>
-
-    <section id="xl-history"></section>
-    <section id="yang-vs-yin"></section>
-    <section id="xl-structure"></section>
-    <section id="zhuocaoping"></section>
-
-    <section id="yt-history"></section>
-    <section id="yt-culture"></section>
-    <section id="yt-structure"></section>
-    <section id="fuhailu"></section>
-
-    <section id="yl-history"></section>
-    <section id="yl-culture"></section>
-    <section id="yl-structure"></section>
-    <section id="baiqishu"></section>
-
-    <section id="yuqing"></section>
-
-    <section id="prod-zhilingtu"></section>
-    <section id="prod-zhuocaoping"></section>
-    <section id="prod-fuhailu"></section>
-    <section id="prod-baiqishu"></section>
-    <section id="prod-menu"></section>
-    <section id="prod-wanxiezong"></section>
-    <section id="prod-fanshanxi"></section>
-    <section id="prod-jinyuyan"></section>
-    <section id="prod-lingcaojing"></section>
+    <section id="plants"><h2>藥藥纏繞</h2><div class="loading">Loading…</div></section>
+    <section id="talismans"><h2>符籙纏繞</h2><div class="loading">Loading…</div></section>
+    <section id="weapons"><h2>百器書</h2><div class="loading">Loading…</div></section>
   </main>
 
-  <!-- README 彈窗 -->
-  <div id="readme-modal" class="modal" hidden>
-    <div class="modal-backdrop"></div>
-    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="readme-title">
-      <h2 id="readme-title">README</h2>
-      <div id="readme-modal-content" class="modal-content"></div>
-      <div class="modal-actions">
-        <label class="modal-checkbox">
-          <input type="checkbox" id="readme-dont-show" />
-          下次不要再出現
-        </label>
-        <button id="readme-ok">我知道了</button>
-      </div>
+  <!-- 📌README Modal -->
+  <div id="readme-modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close">×</button>
+      <div id="readme-content">Loading README…</div>
     </div>
   </div>
+
 
   <footer>
     <p>© 2024 百川群英錄 • 保留一切權利</p>

@@ -1,24 +1,17 @@
 /* =========================================
-   百川群英錄 | style.css (Final Packed v2)
-   - 自訂字型 KurewaGothicCjkTc
-   - 亮/暗色模式
-   - 卡片圓角、陰影
-   - 橫向 TOC + 宗門子分頁 → 飛出
-   - ScrollSpy 高亮
-   - README 彈窗
-   - 全站 UI 100% 不透明（含強化覆蓋）
+   百川群英錄 | style.css
+   - 自訂字型 ThePeakFontBeta
+   - 橫向 TOC (桌機 hover / 手機 click)
+   - Modal 彈窗
+   - 100% 不透明按鈕
    ========================================= */
 
-/* 自訂字型 ---------------------------------------------- */
 @font-face {
   font-family: "ThePeakFontBeta";
   src: url("assets/KurewaGothicCjkTc-Regular.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
   font-display: swap;
 }
 
-/* 色票與變數 -------------------------------------------- */
 :root {
   --bg: #f7f8fb;
   --fg: #1f2430;
@@ -28,20 +21,14 @@
   --accent: #7c3aed;
   --accent-contrast: #ffffff;
   --toc-bg: #ffffff;
-  --shadow: 0 12px 28px rgba(16, 24, 40, 0.06);
-  --ring: rgba(124, 58, 237, 0.35);
+  --shadow: 0 6px 20px rgba(16,24,40,0.08);
+  --ring: rgba(124,58,237,0.35);
 
   --radius-lg: 18px;
   --radius-sm: 12px;
-  --space-1: 8px;
   --space-2: 12px;
   --space-3: 16px;
   --space-4: 24px;
-  --space-5: 32px;
-
-  color-scheme: light dark;
-  --content-max: 1200px;
-  --section-gap: 18px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -54,143 +41,78 @@
     --accent: #a78bfa;
     --accent-contrast: #0b0f16;
     --toc-bg: #0f1522;
-    --shadow: 0 16px 36px rgba(0,0,0,.45);
-    --ring: rgba(167,139,250,.35);
+    --shadow: 0 6px 20px rgba(0,0,0,0.6);
+    --ring: rgba(167,139,250,0.35);
   }
 }
 
-/* Reset -------------------------------------------------- */
-*,
-*::before,
-*::after { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; }
-
 body {
-  font: 16px/1.65 "ThePeakFontBeta", ui-sans-serif, -apple-system,
-        BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", "PingFang TC",
-        "Microsoft JhengHei", Arial, sans-serif;
-  background:
-    radial-gradient(1200px 800px at 10% -10%, rgba(124,58,237,.06), transparent 40%) no-repeat,
-    var(--bg);
+  margin: 0;
+  font: 16px/1.65 "ThePeakFontBeta", ui-sans-serif, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, "Noto Sans", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+  background: var(--bg);
   color: var(--fg);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-/* 連結 --------------------------------------------------- */
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
-
-/* ========== 橫向 TOC 導覽列 ============================= */
+/* TOC 橫向 ------------------------------------------------ */
 #toc {
+  background: var(--toc-bg);
+  padding: var(--space-2);
   position: sticky;
   top: 0;
-  background: var(--toc-bg);
-  border-bottom: 1px solid var(--border);
-  box-shadow: var(--shadow);
   z-index: 100;
-  padding: 0 var(--space-3);
 }
 #toc nav ul {
-  display: flex;
-  gap: var(--space-4);
   list-style: none;
-  margin: 0;
-  padding: 0;
-  align-items: center;
-  height: 56px;
-}
-#toc > nav > ul > li {
-  position: relative;
-  height: 100%;
+  margin: 0; padding: 0;
   display: flex;
-  align-items: center;
+  gap: var(--space-2);
 }
+#toc li { position: relative; }
 #toc > nav > ul > li > a {
-  padding: 6px 10px;
-  border-radius: 8px;
-  transition: background-color .2s;
-  color: inherit;
+  display: block;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-radius: 999px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: box-shadow .2s;
 }
+#toc > nav > ul > li > a:hover { box-shadow: 0 0 0 3px var(--ring); }
 
-/* 子選單（第二層下拉） */
+/* 子選單：桌機 hover 顯示 */
 #toc li ul {
-  display: none;
   position: absolute;
   top: 100%;
   left: 0;
-  min-width: 200px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   padding: 6px 0;
-  z-index: 200;
+  min-width: 180px;
+  display: none;
 }
 #toc li:hover > ul { display: block; }
-
-#toc li ul li { margin: 0; padding: 0; position: relative; }
 #toc li ul li a {
   display: block;
   padding: 8px 12px;
-  color: inherit;
+  color: var(--fg);
   text-decoration: none;
-  white-space: nowrap;
-  border-radius: 6px;
-  transition: background-color .15s ease;
 }
-
-/* 第三層（宗門 → 子分頁：橫向飛出） */
-#toc li ul li > ul {
-  position: absolute;
-  top: 0;
-  left: 100%;
-  min-width: 200px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow);
-  padding: 6px 0;
-  display: block;
-  opacity: 0;
-  transform: translateX(8px);
-  pointer-events: none;
-  z-index: 250;
-  transition: opacity .18s ease, transform .18s ease;
-}
-#toc li ul li:hover > ul {
-  opacity: 1;
-  transform: translateX(0);
-  pointer-events: auto;
-}
-/* 箭頭指示 */
-#toc li ul li:has(> ul) > a {
-  padding-right: 22px;
-  position: relative;
-}
-#toc li ul li:has(> ul) > a::after {
-  content: "▸";
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  translate: 0 -50%;
-  font-size: 12px;
-  opacity: .6;
-}
+#toc li ul li a:hover { background: rgba(124,58,237,0.08); }
 
 /* ScrollSpy 高亮 */
 #toc a.active {
   background: var(--accent);
-  color: var(--accent-contrast) !important;
-  box-shadow: 0 0 0 2px var(--ring);
-  text-decoration: none;
+  color: var(--accent-contrast);
 }
 
-/* ========== 內容區塊 ============================= */
+/* 內容 ---------------------------------------------------- */
 #content {
-  max-width: var(--content-max);
-  width: 100%;
-  margin: var(--space-5) auto;
+  max-width: 960px;
+  margin: 20px auto;
   padding: 0 var(--space-3);
 }
 #content > section {
@@ -198,41 +120,44 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  padding: clamp(16px, 2vw, 28px);
-  margin-bottom: var(--section-gap);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
 }
-#content h2 { margin: 0 0 6px; font-size: clamp(20px, 3vw, 26px); }
-#content h3 { margin: 6px 0 10px; font-size: clamp(16px, 2.4vw, 20px); color: var(--muted); }
-#content p  { margin: 10px 0; }
 
-/* 狀態樣式 --------------------------------------------- */
-.loading, .error, .empty { border-radius: var(--radius-sm); padding: 12px 14px; }
-[data-state="loading"] .loading {
-  background: linear-gradient(90deg,
-    rgba(180,186,200,0.10), rgba(180,186,200,0.22), rgba(180,186,200,0.10));
-  overflow: hidden; position: relative;
+/* Modal --------------------------------------------------- */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
 }
-[data-state="loading"] .loading::after {
-  content: ""; position: absolute; inset: 0;
-  transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.36), transparent);
-  animation: shimmer 1.2s infinite;
+.modal.open { display: flex; }
+.modal-content {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  max-width: 800px;
+  width: 90%;
+  max-height: 80%;
+  overflow-y: auto;
+  padding: var(--space-4);
+  position: relative;
+  box-shadow: var(--shadow);
 }
-@keyframes shimmer { 100% { transform: translateX(100%); } }
-.error {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  color: #ef4444;
-}
-.empty {
+.modal-close {
+  position: absolute;
+  top: 10px; right: 10px;
+  font-size: 22px;
+  background: transparent;
+  border: none;
   color: var(--muted);
-  background: linear-gradient(0deg, rgba(125,125,125,0.05), transparent);
-  border: 1px dashed var(--border);
+  cursor: pointer;
 }
 
-/* 按鈕（預設 100% 不透明） ------------------------------- */
-button, .btn, input[type="button"], input[type="submit"],
-.modal-actions button {
+/* 按鈕 100% 不透明 --------------------------------------- */
+button, .btn, input[type="button"], input[type="submit"] {
   appearance: none;
   border: 1px solid var(--border);
   background: var(--accent);
@@ -240,106 +165,35 @@ button, .btn, input[type="button"], input[type="submit"],
   padding: 10px 14px;
   border-radius: 999px;
   font-weight: 600;
-  letter-spacing: .2px;
   cursor: pointer;
-  transition: box-shadow .15s ease, transform .04s ease;
+  opacity: 1;
+  transition: box-shadow .15s ease, transform .05s ease;
 }
 button:hover, .btn:hover,
 input[type="button"]:hover, input[type="submit"]:hover {
-  box-shadow: 0 0 0 4px var(--ring);
+  box-shadow: 0 0 0 3px var(--ring);
 }
 button:active, .btn:active,
 input[type="button"]:active, input[type="submit"]:active {
   transform: translateY(1px);
 }
-button:focus-visible, .btn:focus-visible,
-input[type="button"]:focus-visible, input[type="submit"]:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 4px var(--ring);
-}
 
-/* 頁尾 --------------------------------------------------- */
-footer { text-align: center; color: var(--muted); margin: var(--space-5) 0; }
-footer p { margin: 0 0 6px; }
-footer a { color: inherit; }
-footer a:hover { color: var(--accent); }
-
-/* ========== README Modal ============================= */
-[hidden] { display: none !important; }
-.modal { z-index: 1000; }
-.modal-backdrop {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.45);          /* 遮罩刻意保留透明感，營造景深 */
-  backdrop-filter: blur(3px);
-  z-index: 1001;
-  opacity: 0; animation: modalFade .25s ease forwards;
-}
-.modal-panel {
-  position: fixed; top: 50%; left: 50%;
-  transform: translate(-50%, calc(-50% + 8px));
-  background: var(--card); color: var(--fg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 20px 48px rgba(0,0,0,.35);
-  width: min(720px, 92%); max-height: 80vh;
-  overflow: auto; padding: 22px;
-  z-index: 1002; opacity: 0;
-  animation: modalPop .25s ease forwards;
-}
-.modal-content { margin: 12px 0 18px; line-height: 1.65; }
-.modal-actions {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; margin-top: 4px;
-}
-.modal-checkbox { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
-.modal-checkbox input[type="checkbox"] { accent-color: var(--accent); transform: scale(1.1); }
-@keyframes modalFade { to { opacity: 1; } }
-@keyframes modalPop  { to { opacity: 1; transform: translate(-50%, -50%); } }
-
-/* 手機優化 --------------------------------------------- */
+/* 響應式：手機點擊展開 ---------------------------------- */
 @media (max-width: 980px) {
-  #toc nav ul { flex-wrap: wrap; gap: var(--space-2); height: auto; padding: 10px 0; }
-  #toc li ul, #toc li ul li > ul {
-    position: static; box-shadow: none; border: 1px dashed var(--border);
-    opacity: 1 !important; transform: none !important; pointer-events: auto;
+  #toc nav ul { flex-wrap: wrap; }
+  #toc li ul {
+    position: static;
+    display: none !important;
+    box-shadow: none;
+    border: 1px dashed var(--border);
     margin-top: 6px;
   }
+  #toc li.open > ul { display: block !important; }
+  #toc li:has(> ul) > a {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  #toc li:has(> ul) > a::after {
+    content: "▾"; margin-left: 8px; font-size: 12px;
+  }
+  #toc li.open > a::after { transform: rotate(-180deg); }
 }
-@media (max-width: 420px) {
-  :root { --section-gap: 14px; }
-  #content > section { padding: 14px; }
-}
-
-/* =========================================================
-   全站 100% 不透明（實心）強化覆蓋  —— 放在最底不要再改動
-   目的：把所有仍用 rgba(...,0.x) 或 opacity 的地方蓋成實心
-   ========================================================= */
-
-/* 1) 所有按鈕實心 */
-button, .btn,
-input[type="button"], input[type="submit"], input[type="reset"],
-.modal-actions button {
-  opacity: 1 !important;
-  background: var(--accent) !important;
-  color: var(--accent-contrast) !important;
-  border-color: var(--border) !important;
-}
-
-/* 2) TOC 頂層連結：預設、hover 皆用實心膠囊 */
-#toc > nav > ul > li > a,
-#toc > nav > ul > li > a:hover {
-  background: var(--accent) !important;
-  color: var(--accent-contrast) !important;
-  text-decoration: none !important;
-}
-
-/* 3) TOC 子選單 hover / ScrollSpy active 也用實心 */
-#toc li ul li a:hover,
-#toc a.active {
-  background: var(--accent) !important;
-  color: var(--accent-contrast) !important;
-  box-shadow: 0 0 0 2px var(--ring) !important;
-}
-
-/* 4) 保底：避免祖先元素殘留 opacity 影響 */
-#toc, #toc * { opacity: 1 !important; }

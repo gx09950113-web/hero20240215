@@ -289,3 +289,48 @@ footer {
     justify-content: flex-end;
   }
 }
+
+/* ===== README Modal 覆蓋層（新增） ===== */
+#readme-modal[hidden] { display: none !important; }
+
+#readme-modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 1500;
+}
+
+#readme-modal .modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+#readme-modal .modal-panel {
+  position: relative;
+  width: min(920px, 92vw);
+  max-height: 86vh;
+  overflow: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+
+#readme-modal .modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 12px;
+}
+
+#readme-modal .modal-checkbox {
+  margin-right: auto;
+  color: var(--muted);
+  font-size: 0.95rem;
+}

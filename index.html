@@ -161,16 +161,24 @@
   </main>
 
 
-  <!-- 📌README Modal -->
-  <div id="readme-modal" class="modal">
-    <div class="modal-content">
-      <button class="modal-close">×</button>
-      <div id="readme-content">Loading README…</div>
+  <!-- README 彈窗 -->
+  <div id="readme-modal" class="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="readme-title">
+      <h2 id="readme-title">README</h2>
+      <div id="readme-modal-content" class="modal-content"></div>
+      <div class="modal-actions">
+        <label class="modal-checkbox">
+          <input type="checkbox" id="readme-dont-show" />
+          下次不要再出現
+        </label>
+        <button id="readme-ok">我知道了</button>
+      </div>
     </div>
   </div>
 
-
   <footer>
+
     <p>© 2024 百川群英錄 • 保留一切權利</p>
     <div>
       <a href="https://sites.google.com/view/hero20240215/%E9%A6%96%E9%A0%81" target="_blank">官方網站</a> |

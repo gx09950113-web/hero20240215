@@ -1,7 +1,7 @@
 // =========================================
 // 百川群英錄 | app.js（單檢視版 viewer）
 // - TOC 點選只用 #viewer 載入覆蓋，不再新增 section
-// - JSON 物件：渲染成卡片＋條列
+// - JSON 物件：渲染成卡片＋條列（扁平鍵值 → <ul> 條列）
 // - Markdown：外層 .prose 排版
 // - 手機 TOC 點擊展開、README 彈窗、首頁按鈕
 // =========================================
@@ -36,11 +36,25 @@ function isLikelyMarkdown(text) {
   return /(^|\n)#{1,6}\s|(^|\n)[-\*+]\s|(^|\n)\d+\.\s/.test(text);
 }
 
-// ✅ JSON 物件 → 卡片＋條列
+// ✅ JSON 物件 → 卡片＋條列（全為原始值時，輸出單一 <ul>）
 function renderJsonObjectAsList(obj) {
   const esc = (x) => escapeHTML(x);
+  const entries = Object.entries(obj);
+  const allPrimitive = entries.every(([_, v]) =>
+    !Array.isArray(v) && (v === null || typeof v !== "object")
+  );
+
   let html = '<div class="prose">';
-  for (const [key, val] of Object.entries(obj)) {
+
+  if (allPrimitive) {
+    html += `<ul class="kv-list">` + entries.map(([k, v]) =>
+      `<li><strong>${esc(k)}：</strong>${esc(v)}</li>`
+    ).join("") + `</ul>`;
+    html += `</div>`;
+    return html;
+  }
+
+  for (const [key, val] of entries) {
     html += `<div class="kv-group"><h3>${esc(key)}</h3>`;
     if (Array.isArray(val)) {
       html += `<ul class="kv-list">` + val.map(v => `<li>${esc(v)}</li>`).join("") + `</ul>`;
@@ -104,10 +118,14 @@ async function loadSectionAuto(sectionEl) {
       html = `<pre>${escapeHTML(text)}</pre>`;
     }
 
-    sectionEl.innerHTML = html;
+    // ★ 只更新內容容器；避免把 #viewer-title 一起覆蓋掉
+    const contentEl = sectionEl.querySelector(".content") || sectionEl;
+    contentEl.innerHTML = html;
+
     sectionEl.dataset.state = "loaded";
   } catch (err) {
-    sectionEl.innerHTML = `<div class="error">載入失敗：${escapeHTML(err.message || String(err))}</div>`;
+    const contentEl = sectionEl.querySelector(".content") || sectionEl;
+    contentEl.innerHTML = `<div class="error">載入失敗：${escapeHTML(err.message || String(err))}</div>`;
     sectionEl.dataset.state = "error";
   }
 }
@@ -264,12 +282,24 @@ async function ensureSectionAndLoad(targetId) {
     if (main) {
       home ? main.insertBefore(viewer, home.nextSibling) : main.appendChild(viewer);
     }
+  } else {
+    // ★ 若先前被覆蓋掉標題/內容，這裡補回來
+    if (!viewer.querySelector("#viewer-title")) {
+      const h2 = document.createElement("h2");
+      h2.id = "viewer-title";
+      viewer.prepend(h2);
+    }
+    if (!viewer.querySelector(".content")) {
+      const div = document.createElement("div");
+      div.className = "content";
+      viewer.appendChild(div);
+    }
   }
 
   // 2) 用 data-key 指向目標，並設定標題
   const titleEl = viewer.querySelector("#viewer-title");
   viewer.dataset.key = targetId; // ★ 關鍵：loadSectionAuto 會用 dataset.key
-  titleEl.textContent = findTocLabelById(targetId) || targetId;
+  if (titleEl) titleEl.textContent = findTocLabelById(targetId) || targetId;
 
   // 3) 載入並捲動
   await loadSectionAuto(viewer);

@@ -1,5 +1,9 @@
 // =========================================
-// 百川群英錄 | app.js（自動配合 index 版）
+// 百川群英錄 | app.js（單檢視版 viewer）
+// - TOC 點選只用 #viewer 載入覆蓋，不再新增 section
+// - JSON 物件：渲染成卡片＋條列
+// - Markdown：外層 .prose 排版
+// - 手機 TOC 點擊展開、README 彈窗、首頁按鈕
 // =========================================
 
 // ---------- 小工具 ----------
@@ -32,7 +36,7 @@ function isLikelyMarkdown(text) {
   return /(^|\n)#{1,6}\s|(^|\n)[-\*+]\s|(^|\n)\d+\.\s/.test(text);
 }
 
-/* ✅ NEW: 把「物件 JSON」渲染成好看的段落清單 */
+// ✅ JSON 物件 → 卡片＋條列
 function renderJsonObjectAsList(obj) {
   const esc = (x) => escapeHTML(x);
   let html = '<div class="prose">';
@@ -59,14 +63,18 @@ function renderJsonObjectAsList(obj) {
   return html;
 }
 
-// ---------- 內容載入 ----------
+// ---------- 內容載入（支援 dataset.key） ----------
 async function loadSectionAuto(sectionEl) {
   const id = sectionEl.getAttribute("id");
   if (!id) return;
-  if (id === "homepage") return;
-  if (id === "readme") return;
 
-  const key = idToDataKey(id);
+  // 用 data-key 指向真正資料 key（viewer 會用）
+  const rawKey = sectionEl.dataset.key || id;
+
+  // 這兩個不是透過這支載入
+  if (rawKey === "homepage" || rawKey === "readme") return;
+
+  const key = idToDataKey(rawKey);
   const candidates = buildCandidatePaths(key);
 
   sectionEl.dataset.state = "loading";
@@ -79,10 +87,8 @@ async function loadSectionAuto(sectionEl) {
       try {
         const parsed = JSON.parse(text);
         if (Array.isArray(parsed)) {
-          // ✅ 陣列：一段一段排版
           html = `<div class="prose">` + parsed.map(p => `<p>${escapeHTML(p)}</p>`).join("") + `</div>`;
         } else if (parsed && typeof parsed === "object") {
-          // ✅ 物件：轉成標題＋清單卡片
           html = renderJsonObjectAsList(parsed);
         } else {
           html = `<pre>${escapeHTML(String(parsed))}</pre>`;
@@ -91,7 +97,6 @@ async function loadSectionAuto(sectionEl) {
         html = `<pre>${escapeHTML(text)}</pre>`;
       }
     } else if (url.endsWith(".md") || isLikelyMarkdown(text)) {
-      // ✅ Markdown：外層加 .prose
       html = (window.marked && typeof marked.parse === "function")
         ? `<div class="prose">${marked.parse(text)}</div>`
         : `<pre>${escapeHTML(text)}</pre>`;
@@ -105,9 +110,6 @@ async function loadSectionAuto(sectionEl) {
     sectionEl.innerHTML = `<div class="error">載入失敗：${escapeHTML(err.message || String(err))}</div>`;
     sectionEl.dataset.state = "error";
   }
-}
-function setupAutoLoadAllSections() {
-  document.querySelectorAll("main#content > section").forEach(sec => loadSectionAuto(sec));
 }
 
 // ---------- ScrollSpy ----------
@@ -152,7 +154,7 @@ async function setupReadme() {
 
   const dont = localStorage.getItem("bcql_dontShowReadme") === "1";
   if (!dont && modal) {
-    modal.hidden = false;      // 打開時取消 hidden
+    modal.hidden = false;
     modal.classList.add("open");
   }
 
@@ -162,7 +164,7 @@ async function setupReadme() {
         localStorage.setItem("bcql_dontShowReadme", "1");
       }
       modal.classList.remove("open");
-      modal.hidden = true;     // ✅ 關閉時真正隱藏
+      modal.hidden = true;
     });
   }
 }
@@ -226,71 +228,102 @@ function setupHomeButtonScroll() {
   });
 }
 
-// —— NEW: 確保有 section，沒有就動態建立並載入 —— //
-async function ensureSectionAndLoad(id) {
-  if (!id || id === 'homepage' || id === 'readme') {
-    const target = document.getElementById(id || 'homepage');
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    return;
-  }
-  let sec = document.getElementById(id);
-  if (!sec) {
-    sec = document.createElement('section');
-    sec.id = id;
-    sec.innerHTML = '<div class="loading">Loading…</div>';
-    const main = document.querySelector('main#content') || document.querySelector('main');
-    main.appendChild(sec);
-    // 重新初始化 ScrollSpy 以納入新 section（最小改動做法）
-    setupScrollSpy();
-  }
-  await loadSectionAuto(sec);
-  sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+// ---------- TOC 高亮輔助（單檢視時手動處理） ----------
+function findTocLabelById(id) {
+  const a = document.querySelector(`#toc a[href="#${CSS.escape(id)}"]`);
+  return a ? a.textContent.trim() : "";
+}
+function setActiveById(id) {
+  document.querySelectorAll("#toc a").forEach(a => a.classList.remove("active"));
+  const link = document.querySelector(`#toc a[href="#${CSS.escape(id)}"]`);
+  if (link) link.classList.add("active");
 }
 
-// —— NEW: 導覽輔助（保留 hash） —— //
+// ---------- 單檢視：#viewer 覆蓋載入 ----------
+async function ensureSectionAndLoad(targetId) {
+  if (!targetId) return;
+
+  // 特例：首頁/README 不走 viewer
+  if (targetId === "homepage" || targetId === "readme") {
+    const sec = document.getElementById(targetId);
+    if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
+  // 1) 準備（或建立）viewer
+  let viewer = document.getElementById("viewer");
+  if (!viewer) {
+    viewer = document.createElement("section");
+    viewer.id = "viewer";
+    viewer.innerHTML = `
+      <h2 id="viewer-title"></h2>
+      <div class="content"><div class="loading">Loading…</div></div>
+    `;
+    const main = document.querySelector("main#content") || document.querySelector("main");
+    const home = document.getElementById("homepage");
+    if (main) {
+      home ? main.insertBefore(viewer, home.nextSibling) : main.appendChild(viewer);
+    }
+  }
+
+  // 2) 用 data-key 指向目標，並設定標題
+  const titleEl = viewer.querySelector("#viewer-title");
+  viewer.dataset.key = targetId; // ★ 關鍵：loadSectionAuto 會用 dataset.key
+  titleEl.textContent = findTocLabelById(targetId) || targetId;
+
+  // 3) 載入並捲動
+  await loadSectionAuto(viewer);
+  viewer.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// —— 導覽輔助（保留 hash） —— //
 function navigateToId(id) {
   if (!id) return;
-  if (location.hash !== '#' + id) history.pushState(null, '', '#' + id);
+  if (location.hash !== "#" + id) history.pushState(null, "", "#" + id);
+  setActiveById(id);
   ensureSectionAndLoad(id);
 }
 
-// —— NEW: 攔截 TOC 內所有 # 錨點；沒有目標時動態建立 —— //
+// —— 攔截 TOC 內所有 # 錨點 —— //
 function setupTocNav() {
-  const toc = document.getElementById('toc');
+  const toc = document.getElementById("toc");
   if (!toc) return;
-  toc.addEventListener('click', (e) => {
+  toc.addEventListener("click", (e) => {
     const a = e.target.closest('a[href^="#"]');
     if (!a) return;
-    const id = a.getAttribute('href').slice(1);
+    const id = a.getAttribute("href").slice(1);
     if (!id) return;
     e.preventDefault();
     navigateToId(id);
   });
 }
 
-// —— NEW: 處理載入時的 #hash 以及後續變更 —— //
+// —— 處理初始與後續 hash 變更 —— //
 function setupHashRouting() {
-  window.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener("DOMContentLoaded", () => {
     if (location.hash && location.hash.length > 1) {
       const id = decodeURIComponent(location.hash.slice(1));
+      setActiveById(id);
       ensureSectionAndLoad(id);
     }
   });
-  window.addEventListener('hashchange', () => {
+  window.addEventListener("hashchange", () => {
     const id = decodeURIComponent(location.hash.slice(1));
+    setActiveById(id);
     ensureSectionAndLoad(id);
   });
 }
 
 // ---------- 啟動 ----------
 window.addEventListener("DOMContentLoaded", () => {
-  setupAutoLoadAllSections();
+  // 原本會把所有 section 都載入；單檢視模式用不到，拿掉以免重複請求
+  // setupAutoLoadAllSections();
+
   setupScrollSpy();
   setupMobileTocToggle();
   setupHomeButtonScroll();
   setupReadme();
 
-  // —— NEW: 啟用導覽與 hash 路由 —— //
   setupTocNav();
   setupHashRouting();
 });

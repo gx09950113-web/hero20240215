@@ -382,3 +382,36 @@ footer {
   margin: 0; padding-left: 1.1em;
 }
 .kv-list li { margin: 0.3em 0; }
+
+/* ========== JSON 內容的排版（搭配 .prose / kv-*） ========== */
+.prose {
+  line-height: 1.8;
+}
+.prose h2, .prose h3 {
+  margin: 0.2em 0 0.4em;
+}
+.prose p {
+  margin: 0.4em 0;
+}
+
+.kv-group {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e6e8ef);
+  border-radius: 12px;
+  box-shadow: var(--shadow, 0 2px 8px rgba(0,0,0,.06));
+  padding: 12px 14px;
+  margin: 12px 0;
+}
+.kv-group > h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.kv-list {
+  margin: 6px 0 0 0;
+  padding-left: 1.25em;   /* 顯示項目符號 */
+  list-style: disc;
+}
+.kv-list li { margin: 4px 0; }
+.kv-list strong { font-weight: 600; }
+

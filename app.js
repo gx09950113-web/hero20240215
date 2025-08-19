@@ -132,7 +132,7 @@ async function setupReadme() {
         localStorage.setItem("bcql_dontShowReadme", "1");
       }
       modal.classList.remove("open");
-      modal.hidden = true;     // ✅ 關閉時真正隱藏（新增）
+      modal.hidden = true;     // ✅ 關閉時真正隱藏
     });
   }
 }
@@ -196,6 +196,62 @@ function setupHomeButtonScroll() {
   });
 }
 
+// —— NEW: 確保有 section，沒有就動態建立並載入 —— //
+async function ensureSectionAndLoad(id) {
+  if (!id || id === 'homepage' || id === 'readme') {
+    const target = document.getElementById(id || 'homepage');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  let sec = document.getElementById(id);
+  if (!sec) {
+    sec = document.createElement('section');
+    sec.id = id;
+    sec.innerHTML = '<div class="loading">Loading…</div>';
+    const main = document.querySelector('main#content') || document.querySelector('main');
+    main.appendChild(sec);
+    // 重新初始化 ScrollSpy 以納入新 section（最小改動做法）
+    setupScrollSpy();
+  }
+  await loadSectionAuto(sec);
+  sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// —— NEW: 導覽輔助（保留 hash） —— //
+function navigateToId(id) {
+  if (!id) return;
+  if (location.hash !== '#' + id) history.pushState(null, '', '#' + id);
+  ensureSectionAndLoad(id);
+}
+
+// —— NEW: 攔截 TOC 內所有 # 錨點；沒有目標時動態建立 —— //
+function setupTocNav() {
+  const toc = document.getElementById('toc');
+  if (!toc) return;
+  toc.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    if (!a) return;
+    const id = a.getAttribute('href').slice(1);
+    if (!id) return;
+    e.preventDefault();
+    navigateToId(id);
+  });
+}
+
+// —— NEW: 處理載入時的 #hash 以及後續變更 —— //
+function setupHashRouting() {
+  window.addEventListener('DOMContentLoaded', () => {
+    if (location.hash && location.hash.length > 1) {
+      const id = decodeURIComponent(location.hash.slice(1));
+      ensureSectionAndLoad(id);
+    }
+  });
+  window.addEventListener('hashchange', () => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    ensureSectionAndLoad(id);
+  });
+}
+
 // ---------- 啟動 ----------
 window.addEventListener("DOMContentLoaded", () => {
   setupAutoLoadAllSections();
@@ -203,4 +259,8 @@ window.addEventListener("DOMContentLoaded", () => {
   setupMobileTocToggle();
   setupHomeButtonScroll();
   setupReadme();
+
+  // —— NEW: 啟用導覽與 hash 路由 —— //
+  setupTocNav();
+  setupHashRouting();
 });

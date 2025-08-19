@@ -219,7 +219,7 @@ a:hover { text-decoration: underline; }
   border: 1px dashed var(--border);
 }
 
-/* 通用按鈕（80% 不透明） ---------------------------------- */
+/* 通用按鈕（100% 不透明） ---------------------------------- */
 button, .btn, input[type="button"], input[type="submit"] {
   appearance: none;
   border: 1px solid var(--border);
@@ -229,7 +229,7 @@ button, .btn, input[type="button"], input[type="submit"] {
   border-radius: 999px;
   font-weight: 600;
   letter-spacing: .2px;
-  opacity: .8; /* ✅ 80% */
+  opacity: .10; /* ✅ 100% */
   cursor: pointer;
   transition: opacity .15s ease, box-shadow .15s ease, transform .04s ease;
 }

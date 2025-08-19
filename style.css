@@ -334,3 +334,51 @@ footer {
   color: var(--muted);
   font-size: 0.95rem;
 }
+/* ===== JSON / Markdown 內容美化 ===== */
+
+/* 通用 Prose 排版（給 markdown 或一般文字） */
+.prose {
+  line-height: 1.9;
+  font-size: 1rem;
+}
+.prose h1, .prose h2, .prose h3 { line-height: 1.25; margin: 0.6em 0 0.4em; }
+.prose h2 { font-size: 1.35rem; }
+.prose h3 { font-size: 1.15rem; color: var(--muted); }
+.prose p { margin: 0.6em 0; }
+.prose ul, .prose ol { margin: 0.4em 0 0.8em 1.25em; }
+.prose li { margin: 0.25em 0; }
+
+/* 漂亮的 <pre>/<code> 區塊（給 JSON/文字檔） */
+#content pre,
+#readme-modal pre {
+  background: linear-gradient(180deg, rgba(125,125,160,.06), transparent 60%), var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  overflow: auto;
+  white-space: pre-wrap;      /* 手機不會爆版 */
+  word-break: break-word;
+  line-height: 1.75;
+  font: 0.95rem/1.75 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: var(--fg);
+  margin: 10px 0;
+}
+
+/* 物件轉條列時會用到：.kv-group / .kv-list */
+.kv-group {
+  margin: 18px 0;
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+.kv-group > h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+.kv-list {
+  margin: 0; padding-left: 1.1em;
+}
+.kv-list li { margin: 0.3em 0; }

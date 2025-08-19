@@ -32,6 +32,33 @@ function isLikelyMarkdown(text) {
   return /(^|\n)#{1,6}\s|(^|\n)[-\*+]\s|(^|\n)\d+\.\s/.test(text);
 }
 
+/* ✅ NEW: 把「物件 JSON」渲染成好看的段落清單 */
+function renderJsonObjectAsList(obj) {
+  const esc = (x) => escapeHTML(x);
+  let html = '<div class="prose">';
+  for (const [key, val] of Object.entries(obj)) {
+    html += `<div class="kv-group"><h3>${esc(key)}</h3>`;
+    if (Array.isArray(val)) {
+      html += `<ul class="kv-list">` + val.map(v => `<li>${esc(v)}</li>`).join("") + `</ul>`;
+    } else if (val && typeof val === "object") {
+      html += `<ul class="kv-list">` +
+        Object.entries(val).map(([k2, v2]) =>
+          `<li><strong>${esc(k2)}：</strong>${
+            Array.isArray(v2) ? esc(v2.join("、")) :
+            (v2 && typeof v2 === "object") ? esc(JSON.stringify(v2)) :
+            esc(v2)
+          }</li>`
+        ).join("") +
+      `</ul>`;
+    } else {
+      html += `<p>${esc(val)}</p>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
 // ---------- 內容載入 ----------
 async function loadSectionAuto(sectionEl) {
   const id = sectionEl.getAttribute("id");
@@ -52,9 +79,11 @@ async function loadSectionAuto(sectionEl) {
       try {
         const parsed = JSON.parse(text);
         if (Array.isArray(parsed)) {
-          html = parsed.map(p => `<p>${escapeHTML(p)}</p>`).join("");
+          // ✅ 陣列：一段一段排版
+          html = `<div class="prose">` + parsed.map(p => `<p>${escapeHTML(p)}</p>`).join("") + `</div>`;
         } else if (parsed && typeof parsed === "object") {
-          html = `<pre>${escapeHTML(JSON.stringify(parsed, null, 2))}</pre>`;
+          // ✅ 物件：轉成標題＋清單卡片
+          html = renderJsonObjectAsList(parsed);
         } else {
           html = `<pre>${escapeHTML(String(parsed))}</pre>`;
         }
@@ -62,8 +91,9 @@ async function loadSectionAuto(sectionEl) {
         html = `<pre>${escapeHTML(text)}</pre>`;
       }
     } else if (url.endsWith(".md") || isLikelyMarkdown(text)) {
+      // ✅ Markdown：外層加 .prose
       html = (window.marked && typeof marked.parse === "function")
-        ? marked.parse(text)
+        ? `<div class="prose">${marked.parse(text)}</div>`
         : `<pre>${escapeHTML(text)}</pre>`;
     } else {
       html = `<pre>${escapeHTML(text)}</pre>`;
@@ -110,7 +140,7 @@ async function setupReadme() {
   try {
     const { text } = await fetchFirst(["assets/README.md"]);
     const html = (window.marked && typeof marked.parse === "function")
-      ? marked.parse(text)
+      ? `<div class="prose">${marked.parse(text)}</div>`
       : `<pre>${escapeHTML(text)}</pre>`;
     if (inlineWrap) inlineWrap.innerHTML = html;
     if (modalContent) modalContent.innerHTML = html;

@@ -1,9 +1,8 @@
 // =========================================
 // 百川群英錄 | app.js（單檢視版 viewer）
-// - TOC 點選只用 #viewer 載入覆蓋，不再新增 section
-// - JSON 物件：渲染成卡片＋條列（扁平鍵值 → <ul> 條列）
-// - Markdown：外層 .prose 排版
-// - 手機 TOC 點擊展開、README 彈窗、首頁按鈕
+// - 遞迴展開 JSON（物件/陣列巢狀成 <ul>）
+// - 只覆蓋 #viewer .content，不刪標題
+// - 缺少 #viewer-title/.content 會自動補齊
 // =========================================
 
 // ---------- 小工具 ----------
@@ -15,7 +14,7 @@ async function fetchFirst(paths) {
         const text = await res.text();
         return { text, url };
       }
-    } catch (_) {}
+    } catch {}
   }
   throw new Error("No available source: " + paths.join(", "));
 }
@@ -33,45 +32,43 @@ function buildCandidatePaths(key) {
   return [`data/${key}.json`, `data/${key}.md`, `data/${key}.txt`];
 }
 function isLikelyMarkdown(text) {
-  return /(^|\n)#{1,6}\s|(^|\n)[-\*+]\s|(^|\n)\d+\.\s/.test(text);
+  return /(^|\n)#{1,6}\s|(^|\n)[-*+]\s|(^|\n)\d+\.\s/.test(text);
 }
 
-// ✅ JSON 物件 → 卡片＋條列（全為原始值時，輸出單一 <ul>）
+// ---------- JSON 渲染（遞迴展開） ----------
 function renderJsonObjectAsList(obj) {
   const esc = (x) => escapeHTML(x);
-  const entries = Object.entries(obj);
-  const allPrimitive = entries.every(([_, v]) =>
-    !Array.isArray(v) && (v === null || typeof v !== "object")
-  );
 
-  let html = '<div class="prose">';
+  const isPrimitive = (v) => v === null || typeof v !== "object";
 
-  if (allPrimitive) {
-    html += `<ul class="kv-list">` + entries.map(([k, v]) =>
-      `<li><strong>${esc(k)}：</strong>${esc(v)}</li>`
-    ).join("") + `</ul>`;
-    html += `</div>`;
-    return html;
-  }
+  const renderValue = (v) => {
+    if (isPrimitive(v)) return esc(String(v));
 
-  for (const [key, val] of entries) {
-    html += `<div class="kv-group"><h3>${esc(key)}</h3>`;
-    if (Array.isArray(val)) {
-      html += `<ul class="kv-list">` + val.map(v => `<li>${esc(v)}</li>`).join("") + `</ul>`;
-    } else if (val && typeof val === "object") {
-      html += `<ul class="kv-list">` +
-        Object.entries(val).map(([k2, v2]) =>
-          `<li><strong>${esc(k2)}：</strong>${
-            Array.isArray(v2) ? esc(v2.join("、")) :
-            (v2 && typeof v2 === "object") ? esc(JSON.stringify(v2)) :
-            esc(v2)
-          }</li>`
-        ).join("") +
-      `</ul>`;
-    } else {
-      html += `<p>${esc(val)}</p>`;
+    if (Array.isArray(v)) {
+      // 陣列：若全是原始值 → <ul><li>值</li></ul>
+      const allPrim = v.every(isPrimitive);
+      if (allPrim) {
+        return `<ul class="kv-list">` + v.map(x => `<li>${esc(String(x))}</li>`).join("") + `</ul>`;
+      }
+      // 否則逐項遞迴
+      return `<ul class="kv-list">` + v.map(x => `<li>${renderValue(x)}</li>`).join("") + `</ul>`;
     }
-    html += `</div>`;
+
+    // 物件：輸出 key：value（value 可再遞迴）
+    let inner = `<ul class="kv-list">`;
+    for (const [k, vv] of Object.entries(v)) {
+      inner += `<li><strong>${esc(k)}：</strong>${
+        isPrimitive(vv) ? esc(String(vv)) : renderValue(vv)
+      }</li>`;
+    }
+    inner += `</ul>`;
+    return inner;
+  };
+
+  // 預設：最外層每個 key 包一塊卡片（.kv-group）
+  let html = `<div class="prose">`;
+  for (const [key, val] of Object.entries(obj)) {
+    html += `<div class="kv-group"><h3>${esc(key)}</h3>${renderValue(val)}</div>`;
   }
   html += `</div>`;
   return html;
@@ -82,10 +79,7 @@ async function loadSectionAuto(sectionEl) {
   const id = sectionEl.getAttribute("id");
   if (!id) return;
 
-  // 用 data-key 指向真正資料 key（viewer 會用）
   const rawKey = sectionEl.dataset.key || id;
-
-  // 這兩個不是透過這支載入
   if (rawKey === "homepage" || rawKey === "readme") return;
 
   const key = idToDataKey(rawKey);
@@ -118,7 +112,7 @@ async function loadSectionAuto(sectionEl) {
       html = `<pre>${escapeHTML(text)}</pre>`;
     }
 
-    // ★ 只更新內容容器；避免把 #viewer-title 一起覆蓋掉
+    // ✅ 只更新內容容器，不破壞 #viewer-title
     const contentEl = sectionEl.querySelector(".content") || sectionEl;
     contentEl.innerHTML = html;
 
@@ -246,7 +240,7 @@ function setupHomeButtonScroll() {
   });
 }
 
-// ---------- TOC 高亮輔助（單檢視時手動處理） ----------
+// ---------- TOC 高亮輔助 ----------
 function findTocLabelById(id) {
   const a = document.querySelector(`#toc a[href="#${CSS.escape(id)}"]`);
   return a ? a.textContent.trim() : "";
@@ -261,14 +255,12 @@ function setActiveById(id) {
 async function ensureSectionAndLoad(targetId) {
   if (!targetId) return;
 
-  // 特例：首頁/README 不走 viewer
   if (targetId === "homepage" || targetId === "readme") {
     const sec = document.getElementById(targetId);
     if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
     return;
   }
 
-  // 1) 準備（或建立）viewer
   let viewer = document.getElementById("viewer");
   if (!viewer) {
     viewer = document.createElement("section");
@@ -283,7 +275,7 @@ async function ensureSectionAndLoad(targetId) {
       home ? main.insertBefore(viewer, home.nextSibling) : main.appendChild(viewer);
     }
   } else {
-    // ★ 若先前被覆蓋掉標題/內容，這裡補回來
+    // 防呆：若之前被蓋掉，補齊結構
     if (!viewer.querySelector("#viewer-title")) {
       const h2 = document.createElement("h2");
       h2.id = "viewer-title";
@@ -296,12 +288,10 @@ async function ensureSectionAndLoad(targetId) {
     }
   }
 
-  // 2) 用 data-key 指向目標，並設定標題
   const titleEl = viewer.querySelector("#viewer-title");
-  viewer.dataset.key = targetId; // ★ 關鍵：loadSectionAuto 會用 dataset.key
+  viewer.dataset.key = targetId;
   if (titleEl) titleEl.textContent = findTocLabelById(targetId) || targetId;
 
-  // 3) 載入並捲動
   await loadSectionAuto(viewer);
   viewer.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -346,14 +336,10 @@ function setupHashRouting() {
 
 // ---------- 啟動 ----------
 window.addEventListener("DOMContentLoaded", () => {
-  // 原本會把所有 section 都載入；單檢視模式用不到，拿掉以免重複請求
-  // setupAutoLoadAllSections();
-
   setupScrollSpy();
   setupMobileTocToggle();
   setupHomeButtonScroll();
   setupReadme();
-
   setupTocNav();
   setupHashRouting();
 });

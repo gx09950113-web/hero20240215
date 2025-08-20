@@ -590,6 +590,7 @@ footer a:focus {
   box-shadow: var(--shadow);
   z-index: 1500;
   transition: opacity 0.3s ease, transform 0.2s ease;
+ display: grid; place-items: center;
 }
 #back-to-top:hover {
   opacity: 0.9;

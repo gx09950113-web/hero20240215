@@ -582,41 +582,33 @@ footer a:focus {
   border-radius: 50%;
   background: var(--accent);
   color: var(--accent-contrast);
-  font-size: 1.4rem;
-  font-weight: bold;
   border: none;
   cursor: pointer;
-  display: none; /* 預設隱藏 */
+  display: none;
   box-shadow: var(--shadow);
-  z-index: 1500;
+  z-index: 1400;
   transition: opacity 0.3s ease, transform 0.2s ease;
+
+  /* ⬇️ 強制幾何置中，不受字體影響 */
   display: grid;
-  place-items: center;  /* ⬅️ 水平垂直置中 */
-  padding: 0;           /* ⬅️ 避免預設內距造成位移 */
-  line-height: 1;       /* ⬅️ 清掉文字行高影響 */
+  place-items: center;
+  padding: 0;
+  line-height: 1;
 }
 
-/* 讓 SVG 沒有 baseline 空隙 */
+/* 讓 SVG 完全填滿容器，避免 baseline 漂移 */
 #back-to-top svg {
   display: block;
-  width: 22px;
-  height: 22px;
-}
-#back-to-top:hover {
-  opacity: 0.9;
-  transform: translateY(-2px);
-}
-#back-to-top:active {
-  transform: translateY(1px);
+  width: 60%;   /* 相對於圓形大小，桌機/手機都能自適應 */
+  height: 60%;
 }
 
-/* 手機版回到最上面按鈕縮小 */
 @media (max-width: 480px) {
   #back-to-top {
     width: 40px;
     height: 40px;
-    font-size: 1.2rem;
     bottom: 20px;
     right: 20px;
   }
 }
+

@@ -18,14 +18,14 @@
 
 /* 系統色彩與基礎排版 ------------------------------------- */
 :root {
-  --bg: #f5f5dc;
+  --bg: #f5f5dc;              /* 背景改為米色 */
   --fg: #1f2430;
   --muted: #6b7280;
-  --card: #fffaf0;
-  --border: #e6e2d9;
+  --card: #fffaf0;            /* 卡片改為米白色 */
+  --border: #e6e2d9;          /* 邊框偏米色 */
   --accent: #7c3aed;
   --accent-contrast: #ffffff;
-  --toc-bg: #fffaf0;
+  --toc-bg: #fffaf0;          /* TOC 背景跟卡片一致 */
   --shadow: 0 12px 28px rgba(16, 24, 40, 0.06);
   --ring: rgba(124, 58, 237, 0.35);
 
@@ -58,7 +58,7 @@
   }
 }
 
-/* ✅ 手動覆蓋 */
+/* ✅ 手動覆蓋：當 html[data-theme] 存在時，優先使用下列設定 */
 :root[data-theme="light"] {
   color-scheme: light;
   --bg: #f5f5dc;
@@ -97,10 +97,15 @@ body {
         "Segoe UI", Roboto, "Noto Sans", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
   background: var(--bg);
   color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
   display: grid;
   grid-template-rows: auto 1fr;
   gap: var(--space-4);
   padding: var(--space-4);
+
+  /* 🏠 推下內容，避免被固定首頁按鈕蓋住 */
   padding-top: calc(var(--space-5) + 28px);
 }
 
@@ -155,10 +160,12 @@ a:hover { text-decoration: underline; }
   display: block;
   padding: 8px 12px;
   color: var(--fg);
+  text-decoration: none;
 }
 #toc li ul li a:hover { background: rgba(124,58,237,0.08); }
 
-/* 修補子選單重疊 */
+/* ===== 修補：避免多個子選單同時打開、互相疊在一起 ===== */
+#toc > nav > ul > li:hover > ul { display: block; }
 #toc li ul li > ul {
   display: none;
   position: absolute;
@@ -192,6 +199,7 @@ a:hover { text-decoration: underline; }
 /* 內容區 -------------------------------------------------- */
 #content {
   max-width: var(--content-max);
+  width: 100%;
   margin-inline: auto;
 }
 #content > section {
@@ -206,43 +214,369 @@ a:hover { text-decoration: underline; }
 #content h3 { margin: 6px 0 10px; font-size: clamp(16px, 2.4vw, 20px); color: var(--muted); }
 #content p { margin: 10px 0; }
 
-/* 狀態樣式 */
-.loading, .error, .empty { border-radius: var(--radius-sm); padding: 12px 14px; }
-.error { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #ef4444; }
-.empty { color: var(--muted); background: linear-gradient(0deg, rgba(125,125,125,0.05), transparent); border: 1px dashed var(--border); }
+/* 狀態樣式 ------------------------------------------------ */
+.loading, .error, .empty {
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+.error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+.empty {
+  color: var(--muted);
+  background: linear-gradient(0deg, rgba(125,125,125,0.05), transparent);
+  border: 1px dashed var(--border);
+}
 
-/* 通用按鈕 */
-button, .btn { ... } /* （保留原樣式即可） */
+/* 通用按鈕：100% 不透明 ----------------------------------- */
+button, .btn, input[type="button"], input[type="submit"] {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  opacity: 1; /* ✅ 改為 100% */
+  cursor: pointer;
+  transition: opacity .15s ease, box-shadow .15s ease, transform .04s ease;
+}
+button:hover, .btn:hover,
+input[type="button"]:hover, input[type="submit"]:hover {
+  box-shadow: 0 0 0 4px var(--ring);
+}
+button:active, .btn:active,
+input[type="button"]:active, input[type="submit"]:active {
+  transform: translateY(1px);
+}
 
 /* 頁尾 ---------------------------------------------------- */
 footer {
   grid-column: 1 / -1;
   text-align: center;
   color: var(--muted);
-  background: var(--bg);
-  margin-top: var(--space-5);
-  padding: var(--space-3) 1rem;
-  padding-bottom: calc(env(safe-area-inset-bottom) + var(--space-3));
-  font-size: 0.9rem;
-  line-height: 1.6;
-  border-top: 1px solid var(--border);
+  background: var(--bg);              /* 與整體主題一致的背景色 */
+  margin-top: var(--space-5);         /* 與內容保持距離 */
+  padding: var(--space-3) 1rem;       /* 上下內距 */
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--space-3)); /* 📱 手機安全區 */
+  font-size: 0.9rem;                  /* 稍微小一點，避免喧賓奪主 */
+  line-height: 1.6;                   /* 讓連結行距舒服一點 */
+  border-top: 1px solid var(--border);/* 頁尾與主內容有分界 */
 }
-footer a { color: var(--accent); margin: 0 0.4rem; text-decoration: none; }
-footer a:hover { color: var(--accent-contrast); }
+
+/* 頁尾中的連結樣式 */
+footer a {
+  color: var(--accent);               /* 使用全站 accent 色 */
+  text-decoration: none;              /* 移除底線 */
+  margin: 0 0.4rem;                   /* 保持間距 */
+  transition: color 0.2s;
+}
+
+footer a:hover,
+footer a:focus {
+  color: var(--accent-contrast);      /* 滑鼠懸停/焦點時顯眼 */
+}
+
+/* RWD：小螢幕連結自動換行，避免擠在一行 */
 @media (max-width: 480px) {
-  footer div { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+  footer div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
 }
 
-/* ===== 首頁 header + 切換鈕保持原樣 ===== */
+/* ===================== */
+/* 🔰 首頁按鈕樣式 + 主題切換鈕 */
+/* ===================== */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  z-index: 1200;
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  justify-content: flex-start; /* 桌機版靠左 */
+  align-items: center;
+  box-shadow: var(--shadow);
+}
 
-/* ===== README modal / prose / map / badge / home-hero ===== */
-/* （這裡保持和舊版一樣，無改動，略） */
+.site-header .home-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;               /* 圖片與文字間距 */
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--fg);
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.1s ease;
+}
+.site-header .home-btn img.logo {
+  height: 28px;           /* 控制 logo 大小 */
+  width: auto;
+}
+.site-header .home-btn:hover {
+  color: var(--accent);
+  transform: translateY(-1px);
+}
 
-/* ===== 回到最上面按鈕 ===== */
+/* 🌗 亮/暗模式切換按鈕 */
+#theme-toggle {
+  margin-left: auto;               /* 桌機：靠最右 */
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--fg);
+  padding: 6px 8px;
+  border-radius: 10px;
+  transition: transform .2s ease, background-color .2s ease;
+}
+#theme-toggle:hover { transform: scale(1.1); background: rgba(127,127,127,.12); }
+#theme-toggle:active { transform: scale(1.05); }
+
+/* 響應式：手機優化 ---------------------------------------- */
+@media (max-width: 980px) {
+  body { grid-template-rows: auto 1fr; padding: var(--space-3); padding-top: calc(var(--space-5) + 24px); }
+  #toc nav ul { flex-direction: column; gap: 4px; }
+  #toc li ul {
+    position: static;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding-left: 16px;
+  }
+  #toc li ul li > ul {
+    position: static;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    padding-left: 16px;
+  }
+}
+
+/* 手機頭條：整體靠右（保留你原本設定），但將切換鈕拉到左上 */
+@media (max-width: 768px) {
+  .site-header { justify-content: flex-end; }
+  #theme-toggle {
+    order: -1;          /* 讓按鈕排在最前面 */
+    margin-left: 0;
+    margin-right: auto; /* 左側貼齊 */
+  }
+}
+
+/* 手機版縮小 logo 尺寸 */
+@media (max-width: 480px) {
+  .site-header .home-btn img.logo { height: 22px; }
+  .site-header .home-btn { font-size: 1rem; }
+}
+
+/* ===== README Modal 覆蓋層 ===== */
+#readme-modal[hidden] { display: none !important; }
+
+#readme-modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 1500;
+}
+
+#readme-modal .modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+#readme-modal .modal-panel {
+  position: relative;
+  width: min(920px, 92vw);
+  max-height: 86vh;
+  overflow: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+
+#readme-modal .modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 12px;
+}
+
+#readme-modal .modal-checkbox {
+  margin-right: auto;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* ===== JSON / Markdown 內容美化 ===== */
+.prose { line-height: 1.9; font-size: 1rem; }
+.prose h1, .prose h2, .prose h3 { line-height: 1.25; margin: 0.6em 0 0.4em; }
+.prose h2 { font-size: 1.35rem; }
+.prose h3 { font-size: 1.15rem; color: var(--muted); }
+.prose p { margin: 0.6em 0; }
+.prose ul, .prose ol { margin: 0.4em 0 0.8em 1.25em; }
+.prose li { margin: 0.25em 0; }
+
+/* 漂亮的 <pre>/<code> 區塊（給 JSON/文字檔） */
+#content pre,
+#readme-modal pre {
+  background: linear-gradient(180deg, rgba(125,125,160,.06), transparent 60%), var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.75;
+  font: 0.95rem/1.75 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  color: var(--fg);
+  margin: 10px 0;
+}
+
+/* 物件轉條列時會用到：.kv-group / .kv-list */
+.kv-group {
+  margin: 18px 0;
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+.kv-group > h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.kv-list { margin: 0; padding-left: 1.1em; }
+.kv-list li { margin: 0.3em 0; }
+
+/* ========== JSON 內容的排版（搭配 .prose / kv-*） ========== */
+.prose { line-height: 1.8; }
+.prose h2, .prose h3 { margin: 0.2em 0 0.4em; }
+.prose p { margin: 0.4em 0; }
+
+.kv-group {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e6e2d9);
+  border-radius: 12px;
+  box-shadow: var(--shadow, 0 2px 8px rgba(0,0,0,.06));
+  padding: 12px 14px;
+  margin: 12px 0;
+}
+.kv-group > h3 { margin: 0 0 6px; font-size: 1.05rem; }
+
+.kv-list { margin: 6px 0 0 0; padding-left: 1.25em; list-style: disc; }
+.kv-list li { margin: 4px 0; }
+.kv-list strong { font-weight: 600; }
+
+/* ======= 世界氣候專用：全地圖 + JSON 區塊 ======= */
+.map-wrapper {
+  width: 100%;
+  max-width: var(--content-max, 1200px);
+  margin: 0 auto 16px;
+  padding: 12px 16px;
+}
+.section-title {
+  margin: 8px 0 12px;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+.map-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  object-fit: contain;
+}
+.json-section {
+  width: 100%;
+  max-width: var(--content-max, 1200px);
+  margin: 0 auto 32px;
+  padding: 0 16px 16px;
+}
+
+@media (max-width: 430px) {
+  .map-wrapper { padding: 8px 12px; margin-bottom: 12px; }
+  .section-title { font-size: 1.125rem; margin: 6px 0 10px; }
+  .json-section { padding: 0 12px 12px; }
+}
+
+/* ======= 內容頂部宗門徽章（icon）樣式：置中 + RWD ======= */
+.section-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;     /* ✅ 置中 */
+  padding: 8px 0 16px;
+}
+
+.section-badge img {
+  display: block;
+  width: min(90vw, 1024px);    /* ✅ 手機自適應，桌機上限 1024 */
+  height: auto;                /* ✅ 保持比例 */
+  max-height: 70vh;            /* 防止超高螢幕時過大 */
+  filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
+  object-fit: contain;
+}
+
+/* ✅ FHD(≥1920px) 螢幕：確保至少 1024px 寬 */
+@media (min-width: 1920px) {
+  .section-badge img {
+    width: 1024px;
+    height: 1024px;            /* 若原圖非正方可改成 height:auto */
+    object-fit: contain;
+  }
+}
+
+/* ✅ 小螢幕（手機）優化 */
+@media (max-width: 480px) {
+  .section-badge img {
+    width: 88vw;
+    height: auto;
+    max-height: 56vh;
+  }
+}
+
+/* ====== 首頁主視覺（歡迎詞下固定） ====== */
+#home-hero {
+  max-width: var(--content-max, 1200px);
+  margin: 0 auto var(--section-gap);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: clamp(12px, 2vw, 20px);
+}
+
+.homepage-hero {
+  display: block;
+  margin: 0 auto;
+  width: min(780px, 92%);
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.12);
+}
+
+/* ===== 回到最上面按鈕（桌機：SVG；手機：TOP 文字） ===== */
 #back-to-top {
   position: fixed;
   right: 20px;
-  bottom: max(20px, calc(env(safe-area-inset-bottom) + 12px));
+  bottom: max(20px, calc(env(safe-area-inset-bottom) + 12px)); /* 📱 避開 iPhone 指示器 */
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -250,19 +584,26 @@ footer a:hover { color: var(--accent-contrast); }
   color: var(--accent-contrast);
   border: none;
   cursor: pointer;
-  display: none;
+  display: none;                       /* 初始隱藏，捲動後由 JS 顯示 */
   box-shadow: var(--shadow);
-  z-index: 1400;
-  transition: opacity .3s ease, transform .2s ease;
+  z-index: 1400;                       /* 低於 #readme-modal(1500) */
+  transition: opacity 0.3s ease, transform 0.2s ease;
+
+  /* 幾何置中 */
   display: grid;
   place-items: center;
   padding: 0;
   line-height: 1;
 }
+#back-to-top:hover { opacity: 0.9; transform: translateY(-2px); }
+#back-to-top:active { transform: translateY(1px); }
 
-/* 桌機：SVG 箭頭 */
-#back-to-top svg { display: block; width: 60%; height: 60%; }
-#back-to-top .back-to-top-text { display: none; }
+/* 桌機：箭頭 SVG */
+#back-to-top svg {
+  display: block;
+  width: 60%;
+  height: 60%;
+}
 
 /* 手機：改成 TOP 文字 */
 @media (max-width: 480px) {
@@ -270,11 +611,16 @@ footer a:hover { color: var(--accent-contrast); }
     width: 40px;
     height: 40px;
     font-size: 0.8rem;
-    font-weight: bold;
-    display: flex;
+    font-weight: 700;
+    display: flex;               /* 置中文字 */
     align-items: center;
     justify-content: center;
   }
-  #back-to-top svg { display: none; }
-  #back-to-top .back-to-top-text { display: block; color: var(--accent-contrast); }
+  #back-to-top svg { display: none; }                     /* 隱藏箭頭 */
+  #back-to-top .back-to-top-text { display: inline; color: var(--accent-contrast); }
+  /* 若 HTML 沒放 span.back-to-top-text，則用偽元素顯示 TOP */
+  #back-to-top:not(:has(.back-to-top-text))::before {
+    content: "TOP";
+    color: var(--accent-contrast);
+  }
 }

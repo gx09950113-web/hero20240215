@@ -612,3 +612,32 @@ footer a:focus {
   }
 }
 
+/* ===== 回到最上面按鈕：幾何置中 + 安全區避讓 ===== */
+#back-to-top {
+  /* 原本設定保持：position: fixed; width/height; border-radius; background; color; ... */
+  display: grid;              /* 幾何置中 */
+  place-items: center;        /* 水平垂直置中 */
+  padding: 0;
+  line-height: 1;
+  /* 在 iPhone 有 Home 指示器時往上抬一點；沒有時維持原本間距 */
+  bottom: max(20px, calc(env(safe-area-inset-bottom) + 12px));
+  right: 20px;
+}
+
+#back-to-top svg {
+  display: block;             /* 移除 baseline 影響 */
+  width: 60%;                 /* 以圓形大小比例縮放，手機桌機都好看 */
+  height: 60%;
+}
+
+/* 手機再微縮，避免視覺擁擠 */
+@media (max-width: 480px) {
+  #back-to-top { width: 40px; height: 40px; }
+  #back-to-top svg { width: 58%; height: 58%; }
+}
+
+/* ===== Footer：加入安全區內距，避免被 iPhone Home 指示器擋住 ===== */
+footer {
+  padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+

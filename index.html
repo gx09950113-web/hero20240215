@@ -1,544 +1,188 @@
-/* =========================================
-   百川群英錄 | style.css
-   - 自訂字型 ThePeakFontBeta
-   - 自動亮/暗色 (跟隨系統)
-   - 橫向 TOC (桌機) + 點擊展開 (手機)
-   - 三層選單修補（避免重疊）
-   - loading / error / empty 狀態
-   ========================================= */
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>百川群英錄｜索引</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="assets/libs/marked.js"></script>
 
-/* 自訂字型 ---------------------------------------------- */
-@font-face {
-  font-family: "ThePeakFontBeta";
-  src: url("assets/KurewaGothicCjkTc-Regular.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
+  <!-- ✅ 主題提前初始化：若有手動選擇，優先用 data-theme；否則跟隨系統 -->
+  <script>
+    (function () {
+      const saved = localStorage.getItem("theme");
+      if (saved === "light" || saved === "dark") {
+        document.documentElement.setAttribute("data-theme", saved);
+      } else {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+      }
+    })();
+  </script>
 
-/* 系統色彩與基礎排版 ------------------------------------- */
-:root {
-  --bg: #f5f5dc;              /* 背景改為米色 */
-  --fg: #1f2430;
-  --muted: #6b7280;
-  --card: #fffaf0;            /* 卡片改為米白色 */
-  --border: #e6e2d9;          /* 邊框偏米色 */
-  --accent: #7c3aed;
-  --accent-contrast: #ffffff;
-  --toc-bg: #fffaf0;          /* TOC 背景跟卡片一致 */
-  --shadow: 0 12px 28px rgba(16, 24, 40, 0.06);
-  --ring: rgba(124, 58, 237, 0.35);
+  <script defer src="app.js"></script>
+</head>
+<body>
 
-  --radius-lg: 18px;
-  --radius-sm: 12px;
+  <!-- 🔰首頁按鈕 + 主題切換 -->
+  <header class="site-header">
+    <a href="#homepage" class="home-btn" aria-label="回到首頁">
+      <img src="assets/images/百川商標.png" alt="百川商標" class="logo">
+      <span>百川群英錄</span>
+    </a>
+    <button id="theme-toggle" aria-label="切換亮/暗模式" title="切換亮/暗模式">🌙</button>
+  </header>
 
-  --space-1: 8px;
-  --space-2: 12px;
-  --space-3: 16px;
-  --space-4: 24px;
-  --space-5: 32px;
+  <!-- ⛳ 置頂導覽列（原本的 TOC，內容不動） -->
+  <header id="toc" role="navigation" aria-label="主導覽">
+    <nav>
+      <ul>
+        <li>
+          <a href="javascript:void(0)">基礎世界觀</a>
+          <ul>
+            <li><a href="#basic-principles">基本原則</a></li>
+            <li><a href="#world-history">世界歷史</a></li>
+            <li><a href="#divine-orb">御神珠</a></li>
+            <li><a href="#yin-yang">陰陽</a></li>
+          </ul>
+        </li>
 
-  color-scheme: light dark;
-  --content-max: 1200px;
-  --section-gap: 18px;
-}
+        <li>
+          <a href="javascript:void(0)">修仙基本知識</a>
+          <ul>
+            <li><a href="#qi">靈氣</a></li>
+            <li><a href="#root">靈根</a></li>
+            <li><a href="#power">靈力</a></li>
+            <li><a href="#benefits">益處</a></li>
+            <li><a href="#human-cultivation">人修</a></li>
+            <li><a href="#beast-cultivation">獸修</a></li>
+            <li><a href="#demon-cultivation">妖修</a></li>
+          </ul>
+        </li>
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0e1117;
-    --fg: #e5e7eb;
-    --muted: #9aa0a6;
-    --card: #121722;
-    --border: #1f2533;
-    --accent: #a78bfa;
-    --accent-contrast: #0b0f16;
-    --toc-bg: #0f1522;
-    --shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
-    --ring: rgba(167, 139, 250, 0.35);
-  }
-}
+        <li>
+          <a href="javascript:void(0)">世界地理</a>
+          <ul>
+            <li><a href="#climate">世界氣候</a></li>
 
-/* ✅ 手動覆蓋：當 html[data-theme] 存在時，優先使用下列設定 */
-:root[data-theme="light"] {
-  color-scheme: light;
-  --bg: #f5f5dc;
-  --fg: #1f2430;
-  --muted: #6b7280;
-  --card: #fffaf0;
-  --border: #e6e2d9;
-  --accent: #7c3aed;
-  --accent-contrast: #ffffff;
-  --toc-bg: #fffaf0;
-  --shadow: 0 12px 28px rgba(16, 24, 40, 0.06);
-  --ring: rgba(124, 58, 237, 0.35);
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #0e1117;
-  --fg: #e5e7eb;
-  --muted: #9aa0a6;
-  --card: #121722;
-  --border: #1f2533;
-  --accent: #a78bfa;
-  --accent-contrast: #0b0f16;
-  --toc-bg: #0f1522;
-  --shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
-  --ring: rgba(167, 139, 250, 0.35);
-}
+            <li>
+              <a href="javascript:void(0)">皇城</a>
+              <ul>
+                <li><a href="#royal-history">梁國歷史</a></li>
+                <li><a href="#royal-culture">地區風氣</a></li>
+                <li><a href="#baichuan-law">百川律典</a></li>
+              </ul>
+            </li>
+            
+            <li>
+              <a href="javascript:void(0)">千訣宗</a>
+              <ul>
+                <li><a href="#qj-history">千訣歷史</a></li>
+                <li><a href="#qj-culture">千訣宗門風氣</a></li>
+                <li><a href="#qj-structure">千訣組織</a></li>
+                <li><a href="#zhilingtu">執靈圖</a></li>
+              </ul>
+            </li>
 
-*,
-*::before,
-*::after { box-sizing: border-box; }
+            <li>
+              <a href="javascript:void(0)">玄靈宗</a>
+              <ul>
+                <li><a href="#xl-history">玄靈歷史</a></li>
+                <li><a href="#yang-vs-yin">玄陽vs玄陰</a></li>
+                <li><a href="#xl-structure">玄靈組織</a></li>
+                <li><a href="#zhuocaoping">灼草經</a></li>
+              </ul>
+            </li>
 
-html, body { height: 100%; margin: 0; }
+            <li>
+              <a href="javascript:void(0)">衍天宗</a>
+              <ul>
+                <li><a href="#yt-history">衍天歷史</a></li>
+                <li><a href="#yt-culture">衍天風氣</a></li>
+                <li><a href="#yt-structure">衍天組織</a></li>
+                <li><a href="#fuhailu">符海錄</a></li>
+              </ul>
+            </li>
 
-body {
-  font: 16px/1.65 "ThePeakFontBeta", ui-sans-serif, -apple-system, BlinkMacSystemFont,
-        "Segoe UI", Roboto, "Noto Sans", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
-  background: var(--bg);
-  color: var(--fg);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+            <li>
+              <a href="javascript:void(0)">云嵐宗</a>
+              <ul>
+                <li><a href="#yl-history">云嵐歷史</a></li>
+                <li><a href="#yl-culture">云嵐風氣</a></li>
+                <li><a href="#yl-structure">云嵐組織</a></li>
+                <li><a href="#baiqishu">百器書</a></li>
+              </ul>
+            </li>
 
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: var(--space-4);
-  padding: var(--space-4);
+            <li><a href="#yuqing">御清宗</a></li>
+          </ul>
+        </li>
 
-  /* 🏠 推下內容，避免被固定首頁按鈕蓋住 */
-  padding-top: calc(var(--space-5) + 28px);
-}
+        <li>
+          <a href="javascript:void(0)">世界產物</a>
+          <ul>
+            <!-- 這四個會被 JS 映射到各宗門同名文件 -->
+            <li><a href="#prod-zhilingtu">執靈圖</a></li>
+            <li><a href="#prod-zhuocaoping">灼草經</a></li>
+            <li><a href="#prod-fuhailu">符海錄</a></li>
+            <li><a href="#prod-baiqishu">百器書</a></li>
 
-/* 連結 --------------------------------------------------- */
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+            <li><a href="#prod-menu">菜譜</a></li>
+            <li><a href="#prod-wanxiezong">萬邪塚</a></li>
+            <li><a href="#prod-fanshanxi">凡山戲</a></li>
+            <li><a href="#prod-jinyuyan">金玉言</a></li>
+            <li><a href="#prod-lingcaojing">靈草經</a></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </header>
 
-/* TOC 橫向 ------------------------------------------------ */
-#toc {
-  background: var(--toc-bg);
-  padding: var(--space-2);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  isolation: isolate;
-  z-index: 100;
-}
-#toc nav ul {
-  list-style: none;
-  margin: 0; padding: 0;
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-#toc li { position: relative; }
-#toc > nav > ul > li > a {
-  display: block;
-  padding: 8px 16px;
-  background: var(--accent);
-  color: var(--accent-contrast);
-  border-radius: 999px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: box-shadow .2s;
-}
-#toc > nav > ul > li > a:hover { box-shadow: 0 0 0 3px var(--ring); }
+  <!-- 主內容 -->
+  <main id="content">
+    <!-- 🏠 首頁固定內容 -->
+    <section id="homepage">
+      <h2>歡迎</h2>
+      <p>歡迎來到百川群英錄超級簡單入門網站！</p>
+      <p>本網站旨在於讓未接觸過群英錄的大家能快速知道整個世界的架構。</p>
+      <p>具體玩法請根據下方連結前往官方網站或官方Discord！<br>
+      裡面會有專人跟許多前輩玩家替您解惑！</p>
+   </section>
 
-/* 子選單：桌機 hover 顯示 */
-#toc li ul {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: 6px 0;
-  min-width: 180px;
-  display: none;
-}
-#toc li:hover > ul { display: block; }
-#toc li ul li a {
-  display: block;
-  padding: 8px 12px;
-  color: var(--fg);
-  text-decoration: none;
-}
-#toc li ul li a:hover { background: rgba(124,58,237,0.08); }
+  <!-- 🖼️ 首頁主視覺專區：固定在歡迎詞「下面」 -->
+  <section id="home-hero" aria-hidden="true">
+  <img
+    src="assets/images/qunyinglu.png"
+    alt="群英錄主視覺"
+    class="homepage-hero"
+  />
+  </section>
+  </main>
 
-/* ===== 修補：避免多個子選單同時打開、互相疊在一起 ===== */
-#toc > nav > ul > li:hover > ul { display: block; }
-#toc li ul li > ul {
-  display: none;
-  position: absolute;
-  top: 0;
-  left: 100%;
-  min-width: 200px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow);
-  padding: 6px 0;
-  z-index: 250;
-  opacity: 0;
-  transform: translateX(8px);
-  pointer-events: none;
-  transition: opacity .18s ease, transform .18s ease;
-}
-#toc li ul > li:hover > ul {
-  display: block;
-  opacity: 1;
-  transform: translateX(0);
-  pointer-events: auto;
-}
+  <!-- README 彈窗 -->
+  <div id="readme-modal" class="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="readme-title">
+      <h2 id="readme-title">README</h2>
+      <div id="readme-modal-content" class="modal-content"></div>
+      <div class="modal-actions">
+        <label class="modal-checkbox">
+          <input type="checkbox" id="readme-dont-show" />
+          下次不要再出現
+        </label>
+        <button id="readme-ok">我知道了</button>
+      </div>
+    </div>
+  </div>
 
-/* ScrollSpy 高亮 */
-#toc a.active {
-  background: var(--accent);
-  color: var(--accent-contrast);
-}
-
-/* 內容區 -------------------------------------------------- */
-#content {
-  max-width: var(--content-max);
-  width: 100%;
-  margin-inline: auto;
-}
-#content > section {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: clamp(16px, 2vw, 28px);
-  margin-bottom: var(--section-gap);
-}
-#content h2 { margin: 0 0 6px; font-size: clamp(20px, 3vw, 26px); }
-#content h3 { margin: 6px 0 10px; font-size: clamp(16px, 2.4vw, 20px); color: var(--muted); }
-#content p { margin: 10px 0; }
-
-/* 狀態樣式 ------------------------------------------------ */
-.loading, .error, .empty {
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-}
-.error {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  color: #ef4444;
-}
-.empty {
-  color: var(--muted);
-  background: linear-gradient(0deg, rgba(125,125,125,0.05), transparent);
-  border: 1px dashed var(--border);
-}
-
-/* 通用按鈕：100% 不透明 ----------------------------------- */
-button, .btn, input[type="button"], input[type="submit"] {
-  appearance: none;
-  border: 1px solid var(--border);
-  background: var(--accent);
-  color: var(--accent-contrast);
-  padding: 10px 14px;
-  border-radius: 999px;
-  font-weight: 600;
-  letter-spacing: .2px;
-  opacity: 1; /* ✅ 改為 100% */
-  cursor: pointer;
-  transition: opacity .15s ease, box-shadow .15s ease, transform .04s ease;
-}
-button:hover, .btn:hover,
-input[type="button"]:hover, input[type="submit"]:hover {
-  box-shadow: 0 0 0 4px var(--ring);
-}
-button:active, .btn:active,
-input[type="button"]:active, input[type="submit"]:active {
-  transform: translateY(1px);
-}
-
-/* 頁尾 ---------------------------------------------------- */
-footer {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: var(--muted);
-  margin-top: var(--space-5);
-}
-
-/* ===================== */
-/* 🔰 首頁按鈕樣式 + 主題切換鈕 */
-/* ===================== */
-.site-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  z-index: 1200;
-  padding: var(--space-2) var(--space-3);
-  display: flex;
-  justify-content: flex-start; /* 桌機版靠左 */
-  align-items: center;
-  box-shadow: var(--shadow);
-}
-
-.site-header .home-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;               /* 圖片與文字間距 */
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--fg);
-  text-decoration: none;
-  transition: color 0.2s ease, transform 0.1s ease;
-}
-.site-header .home-btn img.logo {
-  height: 28px;           /* 控制 logo 大小 */
-  width: auto;
-}
-.site-header .home-btn:hover {
-  color: var(--accent);
-  transform: translateY(-1px);
-}
-
-/* 🌗 亮/暗模式切換按鈕 */
-#theme-toggle {
-  margin-left: auto;               /* 桌機：靠最右 */
-  background: none;
-  border: none;
-  font-size: 1.4rem;
-  line-height: 1;
-  cursor: pointer;
-  color: var(--fg);
-  padding: 6px 8px;
-  border-radius: 10px;
-  transition: transform .2s ease, background-color .2s ease;
-}
-#theme-toggle:hover { transform: scale(1.1); background: rgba(127,127,127,.12); }
-#theme-toggle:active { transform: scale(1.05); }
-
-/* 響應式：手機優化 ---------------------------------------- */
-@media (max-width: 980px) {
-  body { grid-template-rows: auto 1fr; padding: var(--space-3); padding-top: calc(var(--space-5) + 24px); }
-  #toc nav ul { flex-direction: column; gap: 4px; }
-  #toc li ul {
-    position: static;
-    border: none;
-    box-shadow: none;
-    border-radius: 0;
-    padding-left: 16px;
-  }
-  #toc li ul li > ul {
-    position: static;
-    opacity: 1;
-    transform: none;
-    pointer-events: auto;
-    padding-left: 16px;
-  }
-}
-
-/* 手機頭條：整體靠右（保留你原本設定），但將切換鈕拉到左上 */
-@media (max-width: 768px) {
-  .site-header { justify-content: flex-end; }
-  #theme-toggle {
-    order: -1;          /* 讓按鈕排在最前面 */
-    margin-left: 0;
-    margin-right: auto; /* 左側貼齊 */
-  }
-}
-
-/* 手機版縮小 logo 尺寸 */
-@media (max-width: 480px) {
-  .site-header .home-btn img.logo { height: 22px; }
-  .site-header .home-btn { font-size: 1rem; }
-}
-
-/* ===== README Modal 覆蓋層 ===== */
-#readme-modal[hidden] { display: none !important; }
-
-#readme-modal {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  z-index: 1500;
-}
-
-#readme-modal .modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,.45);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
-}
-
-#readme-modal .modal-panel {
-  position: relative;
-  width: min(920px, 92vw);
-  max-height: 86vh;
-  overflow: auto;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: 16px 18px;
-}
-
-#readme-modal .modal-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  align-items: center;
-  margin-top: 12px;
-}
-
-#readme-modal .modal-checkbox {
-  margin-right: auto;
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-/* ===== JSON / Markdown 內容美化 ===== */
-.prose { line-height: 1.9; font-size: 1rem; }
-.prose h1, .prose h2, .prose h3 { line-height: 1.25; margin: 0.6em 0 0.4em; }
-.prose h2 { font-size: 1.35rem; }
-.prose h3 { font-size: 1.15rem; color: var(--muted); }
-.prose p { margin: 0.6em 0; }
-.prose ul, .prose ol { margin: 0.4em 0 0.8em 1.25em; }
-.prose li { margin: 0.25em 0; }
-
-/* 漂亮的 <pre>/<code> 區塊（給 JSON/文字檔） */
-#content pre,
-#readme-modal pre {
-  background: linear-gradient(180deg, rgba(125,125,160,.06), transparent 60%), var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: 14px 16px;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.75;
-  font: 0.95rem/1.75 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  color: var(--fg);
-  margin: 10px 0;
-}
-
-/* 物件轉條列時會用到：.kv-group / .kv-list */
-.kv-group {
-  margin: 18px 0;
-  padding: 14px 16px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-}
-.kv-group > h3 { margin: 0 0 8px; font-size: 1.05rem; }
-.kv-list { margin: 0; padding-left: 1.1em; }
-.kv-list li { margin: 0.3em 0; }
-
-/* ========== JSON 內容的排版（搭配 .prose / kv-*） ========== */
-.prose { line-height: 1.8; }
-.prose h2, .prose h3 { margin: 0.2em 0 0.4em; }
-.prose p { margin: 0.4em 0; }
-
-.kv-group {
-  background: var(--card, #fff);
-  border: 1px solid var(--border, #e6e2d9);
-  border-radius: 12px;
-  box-shadow: var(--shadow, 0 2px 8px rgba(0,0,0,.06));
-  padding: 12px 14px;
-  margin: 12px 0;
-}
-.kv-group > h3 { margin: 0 0 6px; font-size: 1.05rem; }
-
-.kv-list { margin: 6px 0 0 0; padding-left: 1.25em; list-style: disc; }
-.kv-list li { margin: 4px 0; }
-.kv-list strong { font-weight: 600; }
-
-/* ======= 世界氣候專用：全地圖 + JSON 區塊 ======= */
-.map-wrapper {
-  width: 100%;
-  max-width: var(--content-max, 1200px);
-  margin: 0 auto 16px;
-  padding: 12px 16px;
-}
-.section-title {
-  margin: 8px 0 12px;
-  font-size: 1.25rem;
-  line-height: 1.3;
-  font-weight: 600;
-}
-.map-image {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  margin: 0 auto;
-  border-radius: 8px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-  object-fit: contain;
-}
-.json-section {
-  width: 100%;
-  max-width: var(--content-max, 1200px);
-  margin: 0 auto 32px;
-  padding: 0 16px 16px;
-}
-
-@media (max-width: 430px) {
-  .map-wrapper { padding: 8px 12px; margin-bottom: 12px; }
-  .section-title { font-size: 1.125rem; margin: 6px 0 10px; }
-  .json-section { padding: 0 12px 12px; }
-}
-
-/* ======= 內容頂部宗門徽章（icon）樣式：置中 + RWD ======= */
-.section-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;     /* ✅ 置中 */
-  padding: 8px 0 16px;
-}
-
-.section-badge img {
-  display: block;
-  width: min(90vw, 1024px);    /* ✅ 手機自適應，桌機上限 1024 */
-  height: auto;                /* ✅ 保持比例 */
-  max-height: 70vh;            /* 防止超高螢幕時過大 */
-  filter: drop-shadow(0 8px 14px rgba(0,0,0,.12));
-  object-fit: contain;
-}
-
-/* ✅ FHD(≥1920px) 螢幕：確保至少 1024px 寬 */
-@media (min-width: 1920px) {
-  .section-badge img {
-    width: 1024px;
-    height: 1024px;            /* 若原圖非正方可改成 height:auto，但你說要 1024×1024 顯示 */
-    object-fit: contain;
-  }
-}
-
-/* ✅ 小螢幕（手機）優化 */
-@media (max-width: 480px) {
-  .section-badge img {
-    width: 88vw;               /* 更緊貼螢幕 */
-    height: auto;
-    max-height: 56vh;
-  }
-}
-
-/* ====== 首頁主視覺（歡迎詞下固定） ====== */
-#home-hero {
-  max-width: var(--content-max, 1200px);
-  margin: 0 auto var(--section-gap);
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: clamp(12px, 2vw, 20px);
-}
-
-.homepage-hero {
-  display: block;
-  margin: 0 auto;
-  width: min(780px, 92%);
-  height: auto;
-  border-radius: 12px;
-  box-shadow: 0 10px 24px rgba(0,0,0,.12);
-}
+  <footer>
+    <p>© 2024 百川群英錄 • 保留一切權利</p>
+    <div>
+      <a href="https://sites.google.com/view/hero20240215/%E9%A6%96%E9%A0%81" target="_blank">官方網站</a> |
+      <a href="https://discord.gg/QbkE3dcheH" target="_blank">Discord</a> |
+      <a href="https://www.facebook.com/profile.php?id=61556551464612&mibextid=2JQ9oc" target="_blank">FB</a> |
+      <a href="https://www.youtube.com/channel/UCTGjU2_FN6DO0lejI8uMapQ" target="_blank">YouTube</a>
+    </div>
+  </footer>
+</body>
+</html>

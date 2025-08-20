@@ -641,3 +641,64 @@ footer {
   padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
 }
 
+/* ===== 回到最上面：手機強制置中最穩版本 ===== */
+#back-to-top {
+  position: fixed;
+  right: 20px;
+  bottom: max(20px, calc(env(safe-area-inset-bottom) + 12px));
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border: none;
+  cursor: pointer;
+  display: none;
+  box-shadow: var(--shadow);
+  z-index: 1400;
+  transition: opacity .3s ease, transform .2s ease;
+
+  /* ⬇️ 讓子元素做絕對定位用 */
+  padding: 0;
+  line-height: 1;
+  position: fixed;      /* 已有，重申無妨 */
+  /* 新增：相對定位，給 SVG 當參考 */
+  /*（注意：fixed 仍然是相對視窗；relative 只影響子元素定位參考，兩者不衝突）*/
+  position: fixed;
+}
+#back-to-top { position: fixed; } /* 保險重申一次 */
+
+#back-to-top {
+  /* 關鍵：讓內部 SVG 的定位參考這顆按鈕 */
+  /* 加 relative，不會影響 fixed 的視窗定位 */
+  position: fixed;
+}
+#back-to-top { position: fixed; } /* 再保險一次 */
+
+/* ✅ 真正置中靠這兩段 */
+#back-to-top { position: fixed; }
+#back-to-top { position: fixed; } /* 不用理會，僅確保不被其他樣式覆蓋 */
+
+/* 子元素絕對置中 */
+#back-to-top svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);  /* 幾何正中心 */
+  display: block;
+  width: 56%;     /* 56〜60% 看你喜好 */
+  height: 56%;
+  pointer-events: none; /* 點擊只落在按鈕，不會卡在 SVG 上 */
+}
+
+/* 手機縮小（含置中保持） */
+@media (max-width: 480px) {
+  #back-to-top { width: 40px; height: 40px; right: 20px; }
+  #back-to-top svg { width: 58%; height: 58%; }
+}
+
+/* Footer 安全區，不被 iPhone Home 指示器擋住 */
+footer {
+  padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+

@@ -18,14 +18,14 @@
 
 /* 系統色彩與基礎排版 ------------------------------------- */
 :root {
-  --bg: #f7f8fb;
+  --bg: #f5f5dc;              /* 背景改為米色 */
   --fg: #1f2430;
   --muted: #6b7280;
-  --card: #ffffff;
-  --border: #e6e8ef;
+  --card: #fffaf0;            /* 卡片改為米白色 */
+  --border: #e6e2d9;          /* 邊框偏米色 */
   --accent: #7c3aed;
   --accent-contrast: #ffffff;
-  --toc-bg: #ffffff;
+  --toc-bg: #fffaf0;          /* TOC 背景跟卡片一致 */
   --shadow: 0 12px 28px rgba(16, 24, 40, 0.06);
   --ring: rgba(124, 58, 237, 0.35);
 
@@ -61,14 +61,14 @@
 /* ✅ 手動覆蓋：當 html[data-theme] 存在時，優先使用下列設定 */
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f7f8fb;
+  --bg: #f5f5dc;
   --fg: #1f2430;
   --muted: #6b7280;
-  --card: #ffffff;
-  --border: #e6e8ef;
+  --card: #fffaf0;
+  --border: #e6e2d9;
   --accent: #7c3aed;
   --accent-contrast: #ffffff;
-  --toc-bg: #ffffff;
+  --toc-bg: #fffaf0;
   --shadow: 0 12px 28px rgba(16, 24, 40, 0.06);
   --ring: rgba(124, 58, 237, 0.35);
 }
@@ -416,7 +416,7 @@ footer {
   white-space: pre-wrap;
   word-break: break-word;
   line-height: 1.75;
-  font: 0.95rem/1.75 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font: 0.95rem/1.75 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   color: var(--fg);
   margin: 10px 0;
 }
@@ -441,7 +441,7 @@ footer {
 
 .kv-group {
   background: var(--card, #fff);
-  border: 1px solid var(--border, #e6e8ef);
+  border: 1px solid var(--border, #e6e2d9);
   border-radius: 12px;
   box-shadow: var(--shadow, 0 2px 8px rgba(0,0,0,.06));
   padding: 12px 14px;
@@ -542,5 +542,3 @@ footer {
   border-radius: 12px;
   box-shadow: 0 10px 24px rgba(0,0,0,.12);
 }
-
-

@@ -449,3 +449,26 @@ window.addEventListener("DOMContentLoaded", () => {
   setupThemeToggle();  // ✅ 新增
   setupHashRouting();
 });
+
+// ===== 回到最上面按鈕（防呆版） =====
+const backToTopBtn = document.getElementById("back-to-top");
+
+if (backToTopBtn) {
+  // 依捲動距離顯示／隱藏
+  const toggleBackToTop = () => {
+    backToTopBtn.style.display = window.scrollY > 200 ? "block" : "none";
+  };
+
+  // 初始判斷一次（避免一進頁就露出）
+  toggleBackToTop();
+
+  window.addEventListener("scroll", toggleBackToTop);
+
+  backToTopBtn.addEventListener("click", () => {
+    // 若使用者偏好減少動效，改成瞬間滾動
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  });
+}
+
+

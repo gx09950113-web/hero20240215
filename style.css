@@ -258,7 +258,36 @@ footer {
   grid-column: 1 / -1;
   text-align: center;
   color: var(--muted);
-  margin-top: var(--space-5);
+  background: var(--bg);              /* 與整體主題一致的背景色 */
+  margin-top: var(--space-5);         /* 與內容保持距離 */
+  padding: var(--space-3) 1rem;       /* 上下內距 */
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--space-3)); /* 📱 手機安全區 */
+  font-size: 0.9rem;                  /* 稍微小一點，避免喧賓奪主 */
+  line-height: 1.6;                   /* 讓連結行距舒服一點 */
+  border-top: 1px solid var(--border);/* 頁尾與主內容有分界 */
+}
+
+/* 頁尾中的連結樣式 */
+footer a {
+  color: var(--accent);               /* 使用全站 accent 色 */
+  text-decoration: none;              /* 移除底線 */
+  margin: 0 0.4rem;                   /* 保持間距 */
+  transition: color 0.2s;
+}
+
+footer a:hover,
+footer a:focus {
+  color: var(--accent-contrast);      /* 滑鼠懸停/焦點時顯眼 */
+}
+
+/* RWD：小螢幕連結自動換行，避免擠在一行 */
+@media (max-width: 480px) {
+  footer div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
 }
 
 /* ===================== */
@@ -541,4 +570,42 @@ footer {
   height: auto;
   border-radius: 12px;
   box-shadow: 0 10px 24px rgba(0,0,0,.12);
+}
+
+/* ===== 回到最上面按鈕 ===== */
+#back-to-top {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 1.4rem;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  display: none; /* 預設隱藏 */
+  box-shadow: var(--shadow);
+  z-index: 1500;
+  transition: opacity 0.3s ease, transform 0.2s ease;
+}
+#back-to-top:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+#back-to-top:active {
+  transform: translateY(1px);
+}
+
+/* 手機版回到最上面按鈕縮小 */
+@media (max-width: 480px) {
+  #back-to-top {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+    bottom: 20px;
+    right: 20px;
+  }
 }
